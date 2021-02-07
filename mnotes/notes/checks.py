@@ -13,15 +13,18 @@ long_stamp_format = "%Y%m%d%H%M%S"
 note_checks = {
     "created": {
         "description": "missing a creation time",
-        "check": lambda x: x.created is None
+        "check": lambda x: x.created is None,
+        "hint": "--fix-created"
     },
     "id": {
         "description": "missing an id",
-        "check": lambda x: x.id is None
+        "check": lambda x: x.id is None,
+        "hint": "--fix-id"
     },
     "id_filename": {
         "description": "missing an id in their filename",
-        "check": lambda x: x.id is None or x.id not in x.file_name
+        "check": lambda x: x.id is None or x.id not in x.file_name,
+        "hint": "--fix-name-id"
     }
 }
 

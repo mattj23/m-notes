@@ -3,9 +3,9 @@
 """
 import os
 import shutil
-from modes.common import arg_to_working_list
-from notes.markdown_notes import NoteMetadata
-from notes.checks import note_checks, long_stamp_format
+from mnotes.modes.common import arg_to_working_list
+from mnotes.notes.markdown_notes import NoteMetadata
+from mnotes.notes.checks import note_checks, long_stamp_format
 
 
 def mode(working_path: str, fix_arg: str):
@@ -33,19 +33,20 @@ def mode(working_path: str, fix_arg: str):
             directory = os.path.dirname(note.file_path)
             proposed_filename = f"{note.id}_{base_name.strip()}{extension}"
             proposed_path = os.path.join(directory, proposed_filename)
+            proposed_rel = os.path.relpath(proposed_path, start=os.curdir)
 
             if os.path.exists(proposed_path):
-                print(f" * cannot rename to '{proposed_path}' because another file already exists there")
+                print(f" * cannot rename to '{proposed_rel}' because another file already exists there")
                 conflicts += 1
                 continue
 
             if proposed_path in proposed_paths:
-                print(f" * cannot rename to '{proposed_path}' because another file with that name has already been "
+                print(f" * cannot rename to '{proposed_rel}' because another file with that name has already been "
                       f"proposed")
                 conflicts += 1
                 continue
 
-            print(f" * proposed new filename: {proposed_filename}")
+            print(f" * proposed new filename: {proposed_rel}")
             changes.append((note, proposed_path))
 
     if conflicts > 0:
@@ -59,8 +60,8 @@ def mode(working_path: str, fix_arg: str):
     if response in ['y', 'yes']:
         for note, value in changes:
             print(f"\nMoving {note.title}")
-            print(f" -> from {note.file_path}")
-            print(f" -> to {value}")
+            print(f" -> from: {os.path.relpath(note.file_path, start=os.curdir)}")
+            print(f" -> to:   {os.path.relpath(value, start=os.curdir)}")
             shutil.move(note.file_path, value)
 
 

@@ -45,6 +45,9 @@ class NoteMetadata:
         self.title = self.raw.get("title")
         self.id = self.raw.get("id")
 
+    def rel_path(self, start: str) -> str:
+        return os.path.relpath(self.file_path, start=start)
+
     @property
     def has_metadata(self):
         return self.raw is not None

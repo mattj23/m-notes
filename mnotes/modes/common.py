@@ -1,5 +1,5 @@
 import os
-from notes.markdown_notes import NoteMetadata, load_all_notes
+from mnotes.notes.markdown_notes import NoteMetadata, load_all_notes
 from typing import Optional, Tuple, List, Set, Callable
 
 

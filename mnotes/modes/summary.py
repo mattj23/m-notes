@@ -2,9 +2,10 @@
     Summary mode, which displays an overview of the corpus
 """
 import time
-from modes.common import check_for_missing_attr
-from notes.markdown_notes import load_all_notes
-from notes.checks import note_checks
+import os
+from mnotes.modes.common import check_for_missing_attr
+from mnotes.notes.markdown_notes import load_all_notes
+from mnotes.notes.checks import note_checks
 
 
 def mode(working_path: str, summary_count: int):
@@ -22,10 +23,12 @@ def mode(working_path: str, summary_count: int):
         if missing:
             print(f"\nFound {len(missing)} notes that are {check['description']}")
             for n in missing[:summary_count]:
-                print(f" -> {n.file_path}")
+                print(f" -> {n.rel_path(os.curdir)}")
             remaining = len(missing) - summary_count
             if remaining > 0:
                 print(f" -> ... and {remaining} more")
+
+            print(f" (fix with {check['hint']})")
 
     end_time = time.time()
     print(f"\nTook {end_time - start_time:0.2f} seconds")

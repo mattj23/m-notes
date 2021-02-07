@@ -2,9 +2,9 @@
     Fix missing creation timestamps
 """
 
-from modes.common import arg_to_working_list
-from notes.markdown_notes import NoteMetadata, local_time_zone
-from notes.checks import note_checks, long_stamp_pattern, from_timestamp_id, file_c_time
+from mnotes.modes.common import arg_to_working_list
+from mnotes.notes.markdown_notes import NoteMetadata, local_time_zone
+from mnotes.notes.checks import note_checks, long_stamp_pattern, from_timestamp_id, file_c_time
 
 
 def mode(working_path: str, fix_arg: str):

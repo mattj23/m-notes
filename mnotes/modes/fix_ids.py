@@ -5,9 +5,9 @@
 from datetime import datetime as DateTime
 from datetime import timedelta as TimeDelta
 
-from modes.common import arg_to_working_list
-from notes.markdown_notes import load_all_notes, get_existing_ids, NoteMetadata
-from notes.checks import note_checks, long_stamp_format
+from mnotes.modes.common import arg_to_working_list
+from mnotes.notes.markdown_notes import load_all_notes, get_existing_ids, NoteMetadata
+from mnotes.notes.checks import note_checks, long_stamp_format
 
 from typing import Set
 

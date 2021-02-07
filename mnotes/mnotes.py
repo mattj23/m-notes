@@ -1,14 +1,12 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 import os
 
-import modes.summary as summary
-import modes.fix_ids as fix_ids
-import modes.fix_created as fix_created
-import modes.fix_filename as fix_filename
+import mnotes.modes.summary as summary
+import mnotes.modes.fix_ids as fix_ids
+import mnotes.modes.fix_created as fix_created
+import mnotes.modes.fix_filename as fix_filename
 
 import argparse
-
-DEBUG_PATH = "evernote-data/patched"
 
 parser = argparse.ArgumentParser()
 command_group = parser.add_mutually_exclusive_group()
@@ -28,7 +26,6 @@ options = parser.parse_args()
 
 def main():
     working_path = os.getcwd()
-    working_path = DEBUG_PATH
 
     if options.fix_created is not None:
         fix_created.mode(working_path, options.fix_created)
