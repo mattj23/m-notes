@@ -19,7 +19,7 @@ $ python3 -m venv mnote
 $ source mnote/bin/activate
 
 # Install via pip from this github repository
-(mnote) $ pip install git+https://github.com/mattj23/m-note
+(mnote) $ pip install git+https://github.com/mattj23/m-notes
 ```
 
 
