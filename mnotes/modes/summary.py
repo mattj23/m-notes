@@ -10,7 +10,7 @@ from mnotes.notes.checks import note_checks
 
 def mode(working_path: str, summary_count: int):
     start_time = time.time()
-    print(f"\nRunning M-Notes in Summary Mode")
+    print(f"\nM-Notes Fix: Summary")
     print("========================================================")
     print(f" * working directory: {working_path}")
 
@@ -28,7 +28,7 @@ def mode(working_path: str, summary_count: int):
             if remaining > 0:
                 print(f" -> ... and {remaining} more")
 
-            print(f" (fix with {check['hint']})")
+            print(f" ({check['hint']})")
 
     end_time = time.time()
     print(f"\nTook {end_time - start_time:0.2f} seconds")

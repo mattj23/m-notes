@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as handle:
 
 setuptools.setup(
     name="m-notes",
-    version="0.0.1",
+    version="0.0.2",
     author="Matthew Jarvis",
     author_email="mattj23@gmail.com",
     description="Markdown note tools",
@@ -20,8 +20,9 @@ setuptools.setup(
     ],
     python_requires='>=3.7',
     install_requires=[
-        "pytz==2021.1",
-        "PyYAML==5.4.1"
+        "pytz>=2021.1",
+        "PyYAML>=5.4.1",
+        "click>=7.1.2"
     ],
     entry_points={
         "console_scripts": [

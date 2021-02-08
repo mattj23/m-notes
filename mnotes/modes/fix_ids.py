@@ -1,20 +1,23 @@
 """
     Fix IDs Mode
 """
+from typing import List, Optional
 
 from datetime import datetime as DateTime
 from datetime import timedelta as TimeDelta
 
-from mnotes.modes.common import arg_to_working_list
 from mnotes.notes.markdown_notes import load_all_notes, get_existing_ids, NoteMetadata
 from mnotes.notes.checks import note_checks, long_stamp_format
 
 from typing import Set
 
 
-def mode(working_path: str, fix_arg: str, resolve: bool):
+def mode(working_path: str, files: List, count: Optional[int], resolve: bool):
     all_notes = load_all_notes(working_path)
-    count, working = arg_to_working_list(fix_arg, "", all_notes)
+    if not files:
+        working = list(all_notes)
+    else:
+        working = [NoteMetadata(f) for f in files]
     if working is None:
         return
 
@@ -81,6 +84,7 @@ def mode(working_path: str, fix_arg: str, resolve: bool):
 
     response = input(f"\nApply {len(changes)} changes? [yes/no]: ").strip().lower()
     if response in ['y', 'yes']:
+        print("\nUser accepted changes")
         for note, value, new_timestamp in changes:
             note_with_content = NoteMetadata(note.file_path, store_content=True)
             note_with_content.id = value
@@ -88,6 +92,8 @@ def mode(working_path: str, fix_arg: str, resolve: bool):
                 note_with_content.created = new_timestamp
             note_with_content.save_file()
 
+    else:
+        print("\nUser rejected changes")
 
 def suggest_conflict_fix(note: NoteMetadata, existing_ids: Set[str]) -> DateTime:
     proposed = note.created

@@ -1,14 +1,17 @@
 """
     Fix missing creation timestamps
 """
+from typing import List, Optional
 
-from mnotes.modes.common import arg_to_working_list
-from mnotes.notes.markdown_notes import NoteMetadata, local_time_zone
+from mnotes.notes.markdown_notes import NoteMetadata, local_time_zone, load_all_notes
 from mnotes.notes.checks import note_checks, long_stamp_pattern, from_timestamp_id, file_c_time
 
 
-def mode(working_path: str, fix_arg: str):
-    count, working = arg_to_working_list(fix_arg, working_path)
+def mode(working_path: str, files: List, count: Optional[int]):
+    if not files:
+        working = load_all_notes(working_path)
+    else:
+        working = [NoteMetadata(f) for f in files]
     if working is None:
         return
 
@@ -43,10 +46,12 @@ def mode(working_path: str, fix_arg: str):
 
     response = input("\nApply changes? [yes/no]: ").strip().lower()
     if response in ['y', 'yes']:
+        print("\nUser accepted changes")
         for note, value in changes:
             note_with_content = NoteMetadata(note.file_path, store_content=True)
             note_with_content.created = value
             note_with_content.save_file()
-
+    else:
+        print("\nUser rejected changes")
 
 
