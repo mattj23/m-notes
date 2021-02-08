@@ -70,15 +70,21 @@ def id_(files: List[click.Path], n: Optional[int], resolve: bool):
 @click.option("-n", default=None, type=int, help="Max number of fixes to perform")
 @click.option("--complete", "complete", flag_value=True,
               help="Completely rewrite the filename from the title information")
+@click.option("--force", "force", flag_value=True,
+              help="Run the rename on all notes specified (use with --complete)")
 @click.argument("files", nargs=-1, type=click.Path())
-def filename(files: List[click.Path], n: Optional[int], complete: bool):
+def filename(files: List[click.Path], n: Optional[int], complete: bool, force: bool):
     """
     Inserted IDs into filenames that are missing them, or use --complete to completely recreate
     filenames based on stripped and simplified versions of the note's *title* metadata.
+
+    By default this will only run on files that do not have their ID in their filename. To do
+    a complete rename on files which already have their ID, use the --force option
     /f
     :return:
     """
-    fix_filename.mode(os.getcwd(), files, n, complete)
+    fix_filename.mode(os.getcwd(), files, n, complete, force)
+
 
 @fix.command()
 @click.option("-n", default=None, type=int, help="Max number of fixes to perform")

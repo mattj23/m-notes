@@ -46,7 +46,7 @@ def complete_rewrite(note: NoteMetadata) -> str:
     return f"{note.id}-{working}.md"
 
 
-def mode(working_path: str, files: List, count: Optional[int], complete: bool):
+def mode(working_path: str, files: List, count: Optional[int], complete: bool, force: bool):
     if not files:
         working = load_all_notes(working_path)
     else:
@@ -61,7 +61,7 @@ def mode(working_path: str, files: List, count: Optional[int], complete: bool):
         if count is not None and len(changes) >= count:
             break
 
-        if note_checks["filename"]["check"](note) or complete:
+        if note_checks["filename"]["check"](note) or (complete and force):
             print("\nFilename to change")
             print(f" * title =    {note.title} ")
             print(f" * filename = {note.file_name}")
@@ -70,8 +70,17 @@ def mode(working_path: str, files: List, count: Optional[int], complete: bool):
                 print(f" * cannot add ID to filename because note does not have an ID!")
                 continue
 
+            if complete and note.title is None:
+                print(" * can't do a complete rename on this note because the title is empty")
+                continue
+
             directory = os.path.dirname(note.file_path)
             proposed_filename = complete_rewrite(note) if complete else prepend_id(note)
+
+            if proposed_filename == note.file_name:
+                print(" * note already has the proposed name")
+                continue
+
             proposed_path = os.path.join(directory, proposed_filename)
             proposed_rel = os.path.relpath(proposed_path, start=os.curdir)
 
