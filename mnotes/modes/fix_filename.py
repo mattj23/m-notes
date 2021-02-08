@@ -62,9 +62,9 @@ def mode(working_path: str, files: List, count: Optional[int], complete: bool):
             break
 
         if note_checks["filename"]["check"](note) or complete:
-            # print("\nFilename to change")
-            # print(f" * title =    {note.title} ")
-            # print(f" * filename = {note.file_name}")
+            print("\nFilename to change")
+            print(f" * title =    {note.title} ")
+            print(f" * filename = {note.file_name}")
 
             if note.id is None:
                 print(f" * cannot add ID to filename because note does not have an ID!")
