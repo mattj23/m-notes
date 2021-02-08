@@ -8,6 +8,7 @@ import mnotes.modes.summary as summary
 import mnotes.modes.fix_ids as fix_ids
 import mnotes.modes.fix_created as fix_created
 import mnotes.modes.fix_filename as fix_filename
+import mnotes.modes.fix_title as fix_title
 
 
 @click.group(invoke_without_command=True)
@@ -79,6 +80,16 @@ def filename(files: List[click.Path], n: Optional[int], complete: bool):
     """
     fix_filename.mode(os.getcwd(), files, n, complete)
 
+@fix.command()
+@click.option("-n", default=None, type=int, help="Max number of fixes to perform")
+@click.argument("files", nargs=-1, type=click.Path())
+def title(files: List[click.Path], n: Optional[int]):
+    """
+    Fix missing titles in the note metadata by searching for leading H1 tag
+    /f
+    :return:
+    """
+    fix_title.mode(os.getcwd(), files, n)
 
 
 # @main.command()

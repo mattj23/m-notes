@@ -16,7 +16,7 @@ def mode(working_path: str, summary_count: int):
 
     notes = load_all_notes(working_path)
     print(f" * total notes in corpus: {len(notes)}")
-    order = ["created", "id", "id_filename"]
+    order = ["created", "id", "title", "filename"]
 
     for check in [note_checks[o] for o in order]:
         missing = check_for_missing_attr(notes, check["check"])
