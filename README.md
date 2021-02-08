@@ -19,8 +19,15 @@ $ python3 -m venv mnote
 $ source mnote/bin/activate
 
 # Install via pip from this github repository
-(mnote) $ pip install git+https://github.com/mattj23/m-notes
+(mnote) $ pip3 install git+https://github.com/mattj23/m-notes
 ```
+
+To update to the latest version:
+
+```
+pip3 install git+https://github.com/mattj23/m-notes --upgrade
+```
+
 
 
 ## Usage
