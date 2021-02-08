@@ -22,7 +22,7 @@ def mode(working_path: str, files: List, count: Optional[int]):
         if count is not None and len(changes) >= count:
             break
 
-        if note_checks["created"]["title"](note):
+        if note_checks["title"]["check"](note):
             print("\nMissing Note Title")
             print(f" * title =    {note.title} ")
             print(f" * filename = {note.file_name}")

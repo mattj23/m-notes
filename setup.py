@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as handle:
 
 setuptools.setup(
     name="m-notes",
-    version="0.0.3",
+    version="0.0.4",
     author="Matthew Jarvis",
     author_email="mattj23@gmail.com",
     description="Markdown note tools",
