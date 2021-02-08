@@ -26,8 +26,15 @@ def mode(working_path: str, files: List, count: Optional[int]):
             print(f" * filename = {note.file_name}")
 
             long_stamp = long_stamp_pattern.findall(note.file_name)
+            got_long_stamp = False
             if long_stamp:
-                converted = from_timestamp_id(long_stamp[0])
+                try:
+                    converted = from_timestamp_id(long_stamp[0])
+                    got_long_stamp = True
+                except ValueError:
+                    print(f" * file had long-stamp but it didn't parse to a valid date/time")
+
+            if got_long_stamp:
                 converted = local_time_zone.localize(converted)
                 print(f" * found timestamp in file name: {long_stamp[0]}")
                 print(f" * converts to {converted}")
