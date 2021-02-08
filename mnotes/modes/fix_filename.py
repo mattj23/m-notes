@@ -61,7 +61,7 @@ def mode(working_path: str, files: List, count: Optional[int], complete: bool):
         if count is not None and len(changes) >= count:
             break
 
-        if note_checks["id_filename"]["check"](note) or complete:
+        if note_checks["filename"]["check"](note) or complete:
             # print("\nFilename to change")
             # print(f" * title =    {note.title} ")
             # print(f" * filename = {note.file_name}")
