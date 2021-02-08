@@ -14,18 +14,18 @@ note_checks = {
     "created": {
         "description": "missing a creation time",
         "check": lambda x: x.created is None,
-        "hint": "--fix-created"
+        "hint": "try the 'mnote fix creation' command"
     },
     "id": {
         "description": "missing an id",
         "check": lambda x: x.id is None,
-        "hint": "--fix-id"
+        "hint": "try the 'mnote fix id' command"
     },
     "id_filename": {
         "description": "missing an id in their filename",
         "check": lambda x: x.id is None or x.id not in x.file_name,
-        "hint": "--fix-name-id"
-    }
+        "hint": "try the 'mnote fix filename' command"
+    },
 }
 
 

@@ -33,6 +33,11 @@ class NoteMetadata:
             self.content = normal_content
 
         if self.raw is None:
+            self.raw = {
+                "created": None,
+                "title": None,
+                "author": None,
+            }
             return
 
         if "created" in self.raw:
