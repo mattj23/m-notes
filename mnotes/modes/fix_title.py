@@ -31,8 +31,9 @@ def mode(working_path: str, files: List, count: Optional[int]):
             content = note_with_content.content.strip().split("\n")
             header = header_pattern.findall(content[0])
             if header:
-                print(f" * header found in content: '{header[0]}'")
-                changes.append((note, header[0]))
+                title = header[0].strip()
+                print(f" * header found in content: '{title}'")
+                changes.append((note, title))
             else:
                 print(f" * no header found in content")
 
