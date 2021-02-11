@@ -28,12 +28,11 @@ def mode(working_path: str, author: Optional[str], files: List, count: Optional[
             click.echo(click.style(f"'{author}'", fg="blue"))
             changes.append((note, author))
 
+    click.echo()
     if not changes:
-        click.echo()
         click.echo(click.style("There were no potential fixes found", bold=True))
         return
 
-    click.echo()
     if click.confirm(click.style(f"Apply these {len(changes)} changes?", bold=True)):
         click.echo(click.style("User accepted changes", fg="green", bold=True))
         for note, new_title in changes:

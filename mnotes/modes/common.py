@@ -11,6 +11,12 @@ def echo_problem_title(issue: str, note: NoteMetadata):
     click.echo(f" * filename = {note.file_name}")
 
 
+def echo_color(prefix: str, highlight: str, color: str, suffix: str = ""):
+    click.echo(prefix, nl=False)
+    click.echo(click.style(highlight, fg=color), nl=False)
+    click.echo(suffix)
+
+
 def parse_to_int(text: str) -> Optional[int]:
     try:
         return int(text.strip())
@@ -41,5 +47,3 @@ def check_for_missing_attr(notes: List[NoteMetadata], checker: Callable[[NoteMet
         if checker(note):
             missing.append(note)
     return missing
-
-

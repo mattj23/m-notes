@@ -35,6 +35,7 @@ def main(ctx):
 @click.pass_context
 @pass_env
 def config(env: MnoteEnvironment, ctx, author: Optional[str]):
+    """ Display and set global configuration parameters """
     env.config.print()
 
     if author:

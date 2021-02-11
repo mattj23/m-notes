@@ -1,15 +1,15 @@
 """
     Fix IDs Mode
 """
-from typing import List, Optional
+import click
+from typing import List, Optional, Set
 
 from datetime import datetime as DateTime
 from datetime import timedelta as TimeDelta
 
+from .common import echo_problem_title, echo_color
 from mnotes.notes.markdown_notes import load_all_notes, get_existing_ids, NoteMetadata
 from mnotes.notes.checks import note_checks, long_stamp_format
-
-from typing import Set
 
 
 def mode(working_path: str, files: List, count: Optional[int], resolve: bool):
@@ -24,7 +24,7 @@ def mode(working_path: str, files: List, count: Optional[int], resolve: bool):
     try:
         all_ids = get_existing_ids(all_notes)
     except ValueError as e:
-        print(f"Error: {e}")
+        click.echo(click.style(f"Error: {e}", fg="red"))
         return
 
     changes = []
@@ -35,22 +35,21 @@ def mode(working_path: str, files: List, count: Optional[int], resolve: bool):
             break
 
         if note_checks["id"]["check"](note):
-            print("\nMissing Note ID")
-            print(f" * title =    {note.title} ")
-            print(f" * filename = {note.file_name}")
+            echo_problem_title("Missing ID", note)
 
             if note.created is None:
-                print(f" * cannot generate ID for this note, it has no creation time!")
+                echo_color(" * cannot generate ID for this note, it has ", "no creation time", "red")
                 continue
 
             new_id = note.created.strftime(long_stamp_format)
             has_conflict = False
             if new_id in all_ids:
-                print(f" * cannot create ID {new_id} because it conflicts with an existing ID in the corpus")
+                echo_color(f" * cannot create ID {new_id} because it ", "conflicts with an existing ID", "red",
+                           " in the corpus")
                 has_conflict = True
 
             if new_id in new_ids:
-                print(f" * cannot create ID {new_id} because it conflicts with another proposed ID ")
+                echo_color(f" * cannot create ID {new_id} because it ", "conflicts with a proposed ID", "red")
                 has_conflict = True
 
             if has_conflict:
@@ -61,8 +60,9 @@ def mode(working_path: str, files: List, count: Optional[int], resolve: bool):
                     offset = abs((new_c_time - note.created).seconds)
                     new_id = new_c_time.strftime(long_stamp_format)
 
-                    print(f" * propose changing note creation time by {offset} seconds to {new_c_time}")
-                    print(f" * new ID would then be {new_id}")
+                    echo_color(f" * propose changing note creation time by ",
+                               f"{offset} seconds to {new_c_time}", "blue")
+                    echo_color(" * new ID would then be ", f"{new_id}", "blue")
                     changes.append((note, new_id, new_c_time))
                     new_ids.add(new_id)
                     continue
@@ -71,20 +71,21 @@ def mode(working_path: str, files: List, count: Optional[int], resolve: bool):
                     conflicts += 1
                     continue
 
-            print(f" * id from creation timestamp = {new_id}")
+            echo_color(" * id from creation timestamp = ", f"{new_id}", "blue")
             new_ids.add(new_id)
             changes.append((note, new_id, None))
 
+    click.echo()
     if conflicts > 0:
-        print(f"\nThere were {conflicts} conflicts. Consider running with the --resolve option.")
+        click.echo(click.style(f"There were {conflicts} conflicts. Consider running with the --resolve option.",
+                               fg="red"))
 
     if not changes:
-        print("\nNo changes to be made")
+        click.echo(click.style("There were no potential fixes found", bold=True))
         return
 
-    response = input(f"\nApply {len(changes)} changes? [yes/no]: ").strip().lower()
-    if response in ['y', 'yes']:
-        print("\nUser accepted changes")
+    if click.confirm(click.style(f"Apply these {len(changes)} changes?", bold=True)):
+        click.echo(click.style("User accepted changes", fg="green", bold=True))
         for note, value, new_timestamp in changes:
             note_with_content = NoteMetadata(note.file_path, store_content=True)
             note_with_content.id = value
@@ -93,11 +94,11 @@ def mode(working_path: str, files: List, count: Optional[int], resolve: bool):
             note_with_content.save_file()
 
     else:
-        print("\nUser rejected changes")
+        click.echo(click.style("User rejected changes", fg="red", bold=True))
+
 
 def suggest_conflict_fix(note: NoteMetadata, existing_ids: Set[str]) -> DateTime:
     proposed = note.created
-
     while proposed.strftime(long_stamp_format) in existing_ids:
         proposed = proposed + TimeDelta(seconds=1)
 

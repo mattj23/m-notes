@@ -34,13 +34,81 @@ pip3 install git+https://github.com/mattj23/m-notes --upgrade
 
 If you used a virtual environment during installation it needs to be active to use the tool. The command-line tool is `mnote` and lives in the python script binary.
 
+### Built-in Help
+You can use the built in help features to get more information on M-Notes' various commands and options. Starting with the root command, `mnote`, the `--help` option will display the list of subcommands which can be run.
 ```bash
-# Navigate into a working directory containing your notes
-(mnote) $ mnote --help
-
+$ mnote --help
 ```
 
-M-Note's default when run without arguments is to summarize the corpus of notes. If problems are found they will be displayed with a hint message showing the commands to fix them.
+The `--help` option can be run on any subcommand, no matter how deep in the command structure.  For example:
 
+```bash
+$ mnote fix --help
+$ mnote fix author --help
+```
 
+### Configuration
 
+The config command allows you to set global information. To see what the options are, use the help option:
+
+```bash
+$ mnote config --help
+```
+
+Running `mnote config` by itself will display what the currently loaded configuration parameters are.
+
+The default author can be set with:
+
+```bash
+$ mnote config --author "Jane C. Doe"
+```
+
+### Fixing Issues with Notes
+
+There are various issues which notes in a corpus can have that cause problems for managing the overall collection and enforcing things like uniqueness and consistency.  The `mnote fix` command is a tool which can help quickly detect and resolve these issues.
+
+**The `mnote fix` command operates only on your current working directory**. 
+
+To scan the current working directory (recursively) for all problematic notes, run the base fix command:
+
+```bash
+$ mnote fix
+```
+
+The number of results displayed can be adjusted with the `-n` option:
+
+```bash
+$ mnote fix -n 50
+```
+
+Problems will be summarized and the commands to perform the fixes will be suggested. The available subcommands are currently:
+
+|Command|Description|
+|-|-|
+|`mnote fix created`|Fix missing creation timestamps|
+|`mnote fix id`|Fix missing IDs from the note metadata|
+|`mnote fix title`|Attempt to fix missing titles by looking for an H1 line at the start of the note|
+|`mnote fix author`|Add author to note either from the default author or one given with the `--author` option|
+|`mnote fix filename`|Fix filenames missing their IDs. Also can clean up filenames with the `--complete` and `--force` options|
+
+All `mnote fix` subcommands can be run on specific files, GLOB patterns (if your operating system supports it), or the entire directory contents:
+
+```bash
+# Run the command on every file in the current working directory
+mnote fix <command> 
+
+# Run the command on the first 10 files that have the specified issue in the working directory
+mnote fix <command> -n 10
+
+# Run the command on the file "my-note.md"
+mnote fix <command> my-note.md
+
+# Run the command on all files that match the pattern note*.md
+mnote fix <command> note*.md
+
+# Run the command on the first 3 files that match the pattern note*.md
+mnote fix <command> note*.md -n 3
+
+# Run the command on all files in the "test" subdirectory
+mnote fix <command> ./test/*
+```
