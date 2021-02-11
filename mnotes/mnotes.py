@@ -1,13 +1,9 @@
-#
 import os
 import pkg_resources
 import click
 from typing import List, Optional
 
-import mnotes.modes.fix_ids as fix_ids
-import mnotes.modes.fix_created as fix_created
-import mnotes.modes.fix_filename as fix_filename
-import mnotes.modes.fix_title as fix_title
+import mnotes.modes as modes
 
 from mnotes.environment import MnoteEnvironment
 
@@ -51,30 +47,17 @@ def config(env: MnoteEnvironment, ctx, author: Optional[str]):
 @click.pass_context
 @click.option("-n", default=5, show_default=True)
 def fix(ctx, n: int):
-    """
-    Summarize the problems found in the corpus.
-    /f
-    :param ctx:
-    :param n:
-    :return:
-    """
+    """ Summarize the problems found in the corpus. """
     if ctx.invoked_subcommand is None:
-        # Summary mode
-        summary.mode(os.getcwd(), n)
+        modes.summary(os.getcwd(), n)
 
 
 @fix.command()
 @click.option("-n", default=None, type=int, help="Max number of fixes to perform")
 @click.argument("files", nargs=-1, type=click.Path())
 def created(files: List[click.Path], n: Optional[int]):
-    """
-    Fix missing creation times from notes in the corpus.
-    /f
-    :param files:
-    :param n:
-    :return:
-    """
-    fix_created.mode(os.getcwd(), files, n)
+    """ Fix missing creation times from notes in the corpus. """
+    modes.fix_created(os.getcwd(), files, n)
 
 
 @fix.command(name="id")
@@ -86,10 +69,8 @@ def id_(files: List[click.Path], n: Optional[int], resolve: bool):
     """
     Generate IDs for notes in the corpus that are missing them. Use --resolve to reconcile potential ID
     mismatches by slightly adjusting the file creation time by a few seconds.
-    /f
-    :return:
     """
-    fix_ids.mode(os.getcwd(), files, n, resolve)
+    modes.fix_ids(os.getcwd(), files, n, resolve)
 
 
 @fix.command()
@@ -109,18 +90,27 @@ def filename(files: List[click.Path], n: Optional[int], complete: bool, force: b
     /f
     :return:
     """
-    fix_filename.mode(os.getcwd(), files, n, complete, force)
+    modes.fix_filename(os.getcwd(), files, n, complete, force)
 
 
 @fix.command()
 @click.option("-n", default=None, type=int, help="Max number of fixes to perform")
 @click.argument("files", nargs=-1, type=click.Path())
 def title(files: List[click.Path], n: Optional[int]):
-    """
-    Fix missing titles in the note metadata by searching for leading H1 tag
-    /f
-    :return:
-    """
-    fix_title.mode(os.getcwd(), files, n)
+    """ Fix missing titles in the note metadata by searching for leading H1 tag """
+    modes.fix_title(os.getcwd(), files, n)
 
+
+@fix.command(name="author")
+@click.option("-n", default=None, type=int, help="Max number of fixes to perform")
+@click.option("-a", "--author", default=None, type=str, help="Name of author to assign (leave empty for default)")
+@click.argument("files", nargs=-1, type=click.Path())
+@pass_env
+def author_(env: MnoteEnvironment, files: List[click.Path], n: Optional[int], author: Optional[str]):
+    """ Fix missing authors in the note metadata by using the active configuration's default author, or
+    by specifying an author with the --author flag"""
+    if author is None:
+        author = env.config.author
+
+    modes.fix_author(env.cwd, author, files, n)
 

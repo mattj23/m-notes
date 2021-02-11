@@ -20,6 +20,7 @@ class NoteMetadata:
         self.created: Optional[DateTime] = None
         self.id: Optional[str] = None
         self.title: Optional[str] = None
+        self.author: Optional[str] = None
 
         with open(file_path, "r") as handle:
             content = handle.read()
@@ -49,6 +50,7 @@ class NoteMetadata:
 
         self.title = self.raw.get("title")
         self.id = self.raw.get("id")
+        self.author = self.raw.get("author")
 
     def rel_path(self, start: str) -> str:
         return os.path.relpath(self.file_path, start=start)
@@ -63,6 +65,7 @@ class NoteMetadata:
         self.raw["created"] = self.created
         self.raw["id"] = self.id
         self.raw["title"] = self.title
+        self.raw["author"] = self.author
         output = dict(self.raw)
         output["created"] = self.created.isoformat()
 

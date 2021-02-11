@@ -27,9 +27,14 @@ note_checks = {
         "hint": "try the 'mnote fix filename' command"
     },
     "title": {
-        "description": "missing title in the metadata",
+        "description": "missing the title in the metadata",
         "check": lambda x: x.title is None,
         "hint": "try the 'mnote fix title' command"
+    },
+    "author": {
+        "description": "missing an author",
+        "check": lambda x: x.author is None,
+        "hint": "try the 'mnote fix author' command"
     },
 }
 

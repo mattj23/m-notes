@@ -9,7 +9,7 @@ class MnoteEnvironment:
         self.config: Config = load_config()
 
     def print(self):
-        click.echo(click.style(f" * current working directory: {self.cwd}", fg="blue"))
+        click.echo(click.style(f" * current directory: {self.cwd}", fg="blue"))
 
 
 
