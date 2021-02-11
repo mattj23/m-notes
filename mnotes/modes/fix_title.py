@@ -9,6 +9,7 @@ from mnotes.notes.checks import note_checks, long_stamp_pattern, from_timestamp_
 
 header_pattern = re.compile("^# (.*)")
 
+
 def mode(working_path: str, files: List, count: Optional[int]):
     if not files:
         working = load_all_notes(working_path)

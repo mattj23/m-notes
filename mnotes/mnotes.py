@@ -17,7 +17,7 @@ pass_env = click.make_pass_decorator(MnoteEnvironment, ensure=True)
 @click.pass_context
 def main(ctx):
     click.echo()
-    click.echo(click.style(f"M-Notes (v{mnote_version}) Markdown Note Manager", bold=True))
+    click.echo(click.style(f"M-Notes (v{mnote_version}) Markdown Note Manager", bold=True, underline=True))
 
     # Load the environment
     ctx.obj = MnoteEnvironment()
@@ -55,9 +55,10 @@ def fix(ctx, n: int):
 @fix.command()
 @click.option("-n", default=None, type=int, help="Max number of fixes to perform")
 @click.argument("files", nargs=-1, type=click.Path())
-def created(files: List[click.Path], n: Optional[int]):
+@pass_env
+def created(env: MnoteEnvironment, files: List[click.Path], n: Optional[int]):
     """ Fix missing creation times from notes in the corpus. """
-    modes.fix_created(os.getcwd(), files, n)
+    modes.fix_created(env.cwd, files, n)
 
 
 @fix.command(name="id")

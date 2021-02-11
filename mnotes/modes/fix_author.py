@@ -4,8 +4,9 @@
 import click
 from typing import List, Optional
 
+from .common import echo_problem_title
 from mnotes.notes.markdown_notes import NoteMetadata, load_all_notes
-from mnotes.notes.checks import note_checks, long_stamp_pattern, from_timestamp_id, file_c_time
+from mnotes.notes.checks import note_checks
 
 
 def mode(working_path: str, author: Optional[str], files: List, count: Optional[int]):
@@ -22,10 +23,9 @@ def mode(working_path: str, author: Optional[str], files: List, count: Optional[
             break
 
         if note_checks["author"]["check"](note):
-            click.echo()
-            click.echo(click.style(f"Missing Author: {note.title}", fg="red"))
-            click.echo(f" * filename = {note.file_name}")
-            click.echo(f" * will set author to '{author}'")
+            echo_problem_title("Missing Author", note)
+            click.echo(" * will set author to ", nl=False)
+            click.echo(click.style(f"'{author}'", fg="blue"))
             changes.append((note, author))
 
     if not changes:
