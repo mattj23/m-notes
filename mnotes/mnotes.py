@@ -1,24 +1,50 @@
 #
 import os
+import pkg_resources
+import click
 from typing import List, Optional
 
-import click
-
-import mnotes.modes.summary as summary
 import mnotes.modes.fix_ids as fix_ids
 import mnotes.modes.fix_created as fix_created
 import mnotes.modes.fix_filename as fix_filename
 import mnotes.modes.fix_title as fix_title
 
+from mnotes.environment import MnoteEnvironment
+
+mnote_version = pkg_resources.require("m-notes")[0].version
+
+
+pass_env = click.make_pass_decorator(MnoteEnvironment, ensure=True)
+
 
 @click.group(invoke_without_command=True)
 @click.pass_context
 def main(ctx):
+    click.echo()
+    click.echo(click.style(f"M-Notes (v{mnote_version}) Markdown Note Manager", bold=True))
+
+    # Load the environment
+    ctx.obj = MnoteEnvironment()
+    ctx.obj.print()
+
     if ctx.invoked_subcommand is None:
-        print("M-Notes Overview")
+        pass
     else:
         pass
         # running the subcommand
+
+
+@main.command()
+@click.option("--author", type=str, help="Set default author")
+@click.pass_context
+@pass_env
+def config(env: MnoteEnvironment, ctx, author: Optional[str]):
+    env.config.print()
+
+    if author:
+        click.echo(click.style(f" * setting author to '{author}'", bold=True))
+        env.config.author = author
+        env.config.write()
 
 
 @main.group(invoke_without_command=True)
@@ -98,45 +124,3 @@ def title(files: List[click.Path], n: Optional[int]):
     fix_title.mode(os.getcwd(), files, n)
 
 
-# @main.command()
-# def fix():
-#     print("running fix")
-
-
-# import argparse
-#
-# parser = argparse.ArgumentParser()
-# command_group = parser.add_mutually_exclusive_group()
-# command_group.add_argument("--fix-created", nargs="?", const="", type=str,
-#                            help="fix the creation time on a specific filename, or all notes if blank")
-# command_group.add_argument("--fix-id", nargs="?", const="", type=str,
-#                            help="fix the id on a specific filename, or all notes if blank")
-# command_group.add_argument("--fix-name-id", nargs="?", const="", type=str,
-#                            help="put the id in a specific filename, or all notes if blank")
-#
-# parser.add_argument("--summary-count", "-s", default=5, type=int, action="store",
-#                     help="number of results to display in summary mode")
-# parser.add_argument("--resolve", action="store_true", help="resolve conflicts during fix-id operation")
-#
-# options = parser.parse_args()
-#
-#
-# def main():
-#     working_path = os.getcwd()
-#
-#     if options.fix_created is not None:
-#         fix_created.mode(working_path, options.fix_created)
-#         return
-#     elif options.fix_id is not None:
-#         fix_ids.mode(working_path, options.fix_id, options.resolve)
-#         return
-#     elif options.fix_name_id is not None:
-#         fix_filename.mode(working_path, options.fix_name_id)
-#         return
-#
-#     # Summary mode
-#     summary.mode(working_path, options.summary_count)
-#
-#
-# if __name__ == '__main__':
-#     main()
