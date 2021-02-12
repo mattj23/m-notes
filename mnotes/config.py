@@ -6,7 +6,7 @@ _all_colors = ("black", "red", "green", "yellow", "blue", "magenta", "cyan", "wh
                "bright_green", "bright_yellow", "bright_blue", "bright_magenta", "bright_cyan", "bright_white")
 
 
-@click.group()
+@click.group(invoke_without_command=True)
 @click.pass_context
 @pass_env
 def config(env: MnoteEnvironment, ctx: click.core.Context):

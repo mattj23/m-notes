@@ -1,4 +1,6 @@
 import os
+import shutil
+
 import click
 import yaml
 from typing import Optional, Dict, Tuple, List
@@ -80,6 +82,8 @@ class Config:
             "author": self.author,
             "styles": self.styles.to_serializable()
         }
+        if os.path.exists(self.file):
+            shutil.copy(self.file, self.file + ".back")
         with open(self.file, "w") as handle:
             yaml.dump(data, handle)
 
