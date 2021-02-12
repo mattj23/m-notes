@@ -57,11 +57,59 @@ $ mnote config --help
 
 Running `mnote config` by itself will display what the currently loaded configuration parameters are.
 
+#### Default Author
 The default author can be set with:
 
 ```bash
-$ mnote config --author "Jane C. Doe"
+$ mnote config author "Jane C. Doe"
 ```
+
+#### Text Styles
+M-Notes allows you to customize certain text styles which are used through the program.  There are currently four text styles: `warning`, `visible`, `success`, and `fail`. 
+
+The current configuration of the text styles can be displayed as follows.
+```bash
+# Display all styles as they are currently configured
+$ mnote config style
+
+# Display one or more of the text styles
+$ mnote config style <style name> [<style name 2>, ...]
+
+# For example, both of the following are valid:
+$ mnote config style warning
+$ mnote config style success fail
+```
+
+Colors show up differently on different terminals with different themes. To see what the ANSI colors look like on your display, run the following command:
+
+```bash
+$ mnote config style --colors
+```
+
+The actual properties for styles can be set by command line arguments while specifying one or more style names. Use `mnote config style --help` to see what each option does.
+
+|Option|Value|Effect|
+|-|-|-|
+|`--fg`|color name (string)|Sets foreground (text) color. Run the `--colors` option to see availible colors|
+|`--bg`|color name (string)|Sets background color. Run the `--colors` option to see availible colors|
+|`--bold`|`true` or `false`|Turns on or off bold|
+|`--underline`|`true` or `false`|Underlines the text|
+|`--blink`|`true` or `false`|Makes the text blink|
+|`--reverse`|`true` or `false`|Reverses the foreground and background colors, this can act like a highlighter|
+
+##### Example of Setting Style Parameters
+
+```bash
+# Make the warning text red
+$ mnote config style warning --fg red
+
+# Make the visible text style blink
+$ mnote config style visible --blink true
+
+# Set both the success and fail text styles to be bold, underline, and have black backgrounds
+$ mnote config style success fail --bold true --underline true --bg black
+```
+
 
 ### Fixing Issues with Notes
 

@@ -16,16 +16,12 @@ def config(env: MnoteEnvironment, ctx: click.core.Context):
     if ctx.invoked_subcommand is None:
         env.config.print()
 
-    # if author:
-    #     click.echo(click.style(f" * setting author to '{author}'", bold=True))
-    #     env.config.author = author
-    #     env.config.write()
-
 
 @config.command(name="author")
 @click.argument("author", type=str, nargs=-1)
 @pass_env
 def author_name(env: MnoteEnvironment, author: List[str]):
+    """ Set the default author which M-Notes uses when fixing blank authors """
     if not author:
         echo_line(" * current author is ", click.style(f"'{env.config.author}'", bold=True))
         return
