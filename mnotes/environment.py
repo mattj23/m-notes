@@ -29,7 +29,7 @@ class Style:
         click.echo(self.to_click(text), nl=nl)
 
     def display_attributes(self) -> List[str]:
-        return sorted(f"{k} = {v}" for k, v in self.as_dict().items())
+        return sorted(f"{k}={v}" for k, v in self.as_dict().items())
 
 
 class Styles:
@@ -39,6 +39,13 @@ class Styles:
         self.fail = Style(**kwargs.get("fail", {}))
         self.visible = Style(**kwargs.get("visible", {}))
 
+        self.map = {
+            "warning": self.warning,
+            "fail": self.fail,
+            "success": self.success,
+            "visible": self.visible
+        }
+
     def to_display_list(self) -> List[Tuple[str, str, Style]]:
         return [
             ("warning", "Style for text that highlights problems or issues", self.warning),
@@ -47,6 +54,9 @@ class Styles:
             ("visible", "Style for text that should be visible or highlighted in a way that draws attention to it, but"
              " is not necessarily good or bad", self.visible),
         ]
+
+    def to_serializable(self):
+        return {k: v.as_dict() for k, v in self.map.items()}
 
 
 class Config:
@@ -64,6 +74,7 @@ class Config:
     def write(self):
         data = {
             "author": self.author,
+            "styles": self.styles.to_serializable()
         }
         with open(self.file, "w") as handle:
             yaml.dump(data, handle)

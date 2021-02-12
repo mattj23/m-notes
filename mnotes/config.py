@@ -11,6 +11,7 @@ _all_colors = ("black", "red", "green", "yellow", "blue", "magenta", "cyan", "wh
 @pass_env
 def config(env: MnoteEnvironment, ctx: click.core.Context):
     """ Display and set global configuration parameters """
+    click.echo(" * configuration mode")
 
     if ctx.invoked_subcommand is None:
         env.config.print()
@@ -30,25 +31,85 @@ def author_name(env: MnoteEnvironment, author: str):
 
 @config.command(name="style")
 @click.option("--colors", flag_value=True, help="Show the colors by name on your terminal")
+@click.option("--fg", type=str, default=None, help="Set the foreground color")
+@click.option("--bg", type=str, default=None, help="Set the background color")
+@click.option("--bold", type=bool, default=None, help="Set the text to be bold")
+@click.option("--underline", type=bool, default=None, help="Set the text to be underlined")
+@click.option("--blink", type=bool, default=None, help="Set the text to blink")
+@click.option("--reverse", type=bool, default=None, help="Reverse the foreground and background")
+@click.argument("style_name", type=str, nargs=-1)
 @pass_env
-def text_style(env: MnoteEnvironment, colors: bool):
+def text_style(env: MnoteEnvironment, colors: bool, style_name: List[str], fg: Optional[str], bg: Optional[str],
+               bold: Optional[bool], underline: Optional[bool], blink: Optional[bool], reverse: Optional[bool] ):
+    """
+    View or set the colors and formatting for the different text styles used by M-Notes
+    """
     if colors:
+        click.echo(" * showing color table")
         show_color_table()
         return
+
+    if style_name:
+        click.echo(f" * styles provided: {', '.join(style_name)}")
+        for name in style_name:
+            if name not in env.config.styles.map:
+                env.config.styles.fail.echo(f" * error: style name '{name}' is not a known M-Notes style")
+                return
+
+    for name in style_name:
+        if fg is not None:
+            if validate_color(noneify_color(fg)):
+                env.config.styles.map[name].fg = noneify_color(fg)
+            else:
+                env.config.styles.fail.echo(f" * error: foreground color '{fg}' is not a valid color")
+
+        if bg is not None:
+            if validate_color(noneify_color(bg)):
+                env.config.styles.map[name].bg = noneify_color(bg)
+            else:
+                env.config.styles.fail.echo(f" * error: background color '{bg}' is not a valid color")
+
+        if bold is not None:
+            env.config.styles.map[name].bold = bold
+
+        if underline is not None:
+            env.config.styles.map[name].underline = underline
+
+        if blink is not None:
+            env.config.styles.map[name].blink = blink
+
+        if reverse is not None:
+            env.config.styles.map[name].reverse = reverse
+
+    env.config.write()
 
     click.echo()
     click.echo("Current style configurations are shown below. To display the color options in your terminal, run "
                "'mnote config style --colors' and adjust your styles based on the way it looks.")
 
     for name, description, style_ in env.config.styles.to_display_list():
+        if style_name and name not in style_name:
+            continue
+
         click.echo()
-        click.echo("Style: ", nl=False)
-        click.echo(click.style(f"{name}", bold=True))
+        click.echo(click.style("Style: ", underline=True), nl=False)
+        click.echo(click.style(f"{name}", bold=True, underline=True))
         click.echo(f" * {description}")
         click.echo(" * ", nl=False)
-        style_.echo("This is some text in this style")
-        for t in style_.display_attributes():
-            click.echo(f" * {t}")
+        style_.echo(f"This is a sample of some text in the {name} style")
+        click.echo(" * Attributes: " + ", ".join(style_.display_attributes()))
+
+
+def validate_color(color_name: Optional[str]) -> bool:
+    if color_name is None:
+        return True
+    return color_name in _all_colors
+
+
+def noneify_color(color_name: str) -> Optional[str]:
+    if color_name is not None and color_name.lower() == "none":
+        return None
+    return color_name
 
 
 def show_color_table():
