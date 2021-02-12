@@ -7,7 +7,7 @@ from typing import List, Optional
 from .common import echo_problem_title
 from mnotes.notes.markdown_notes import NoteMetadata, load_all_notes
 from mnotes.notes.checks import note_checks
-from mnotes.environment import MnoteEnvironment, pass_env
+from mnotes.environment import MnoteEnvironment, pass_env, echo_line
 
 
 @click.command(name="author")
@@ -24,6 +24,7 @@ def fix_author(env: MnoteEnvironment, n: Optional[int], author: Optional[str], f
         return
 
     author = env.config.author if author is None else author
+    style = env.config.styles
 
     changes = []
     for note in working:
@@ -32,8 +33,7 @@ def fix_author(env: MnoteEnvironment, n: Optional[int], author: Optional[str], f
 
         if note_checks["author"]["check"](note):
             echo_problem_title("Missing Author", note)
-            click.echo(" * will set author to ", nl=False)
-            click.echo(click.style(f"'{author}'", fg="blue"))
+            echo_line(" * will set author to ", style.visible(f"'{author}'"))
             changes.append((note, author))
 
     click.echo()
@@ -42,12 +42,12 @@ def fix_author(env: MnoteEnvironment, n: Optional[int], author: Optional[str], f
         return
 
     if click.confirm(click.style(f"Apply these {len(changes)} changes?", bold=True)):
-        click.echo(click.style("User accepted changes", fg="green", bold=True))
+        click.echo(style.success("User accepted changes"))
         for note, new_title in changes:
             note_with_content = NoteMetadata(note.file_path, store_content=True)
             note_with_content.author = new_title
             note_with_content.save_file()
     else:
-        click.echo(click.style("User rejected changes", fg="red", bold=True))
+        click.echo(style.fail("User rejected changes"))
 
 

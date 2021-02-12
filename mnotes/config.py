@@ -1,6 +1,6 @@
 import click
 from typing import List, Dict, Optional
-from mnotes.environment import MnoteEnvironment, pass_env, Styles, Style
+from mnotes.environment import MnoteEnvironment, pass_env, echo_line
 
 _all_colors = ("black", "red", "green", "yellow", "blue", "magenta", "cyan", "white", "bright_black", "bright_red",
                "bright_green", "bright_yellow", "bright_blue", "bright_magenta", "bright_cyan", "bright_white")
@@ -23,10 +23,21 @@ def config(env: MnoteEnvironment, ctx: click.core.Context):
 
 
 @config.command(name="author")
-@click.argument("author", type=str)
+@click.argument("author", type=str, nargs=-1)
 @pass_env
-def author_name(env: MnoteEnvironment, author: str):
-    print(f"Author: {author}")
+def author_name(env: MnoteEnvironment, author: List[str]):
+    if not author:
+        echo_line(" * current author is ", click.style(f"'{env.config.author}'", bold=True))
+        return
+
+    if len(author) > 1:
+        echo_line(env.config.styles.warning(" * only one author is allowed, if there are spaces in the author's name"
+                                            " enclose the name with quotes"))
+        return
+
+    env.config.author = author[0].strip()
+    env.config.write()
+    echo_line(" * setting author to ", env.config.styles.visible(f"'{env.config.author}'", bold=True))
 
 
 @config.command(name="style")
@@ -97,7 +108,7 @@ def text_style(env: MnoteEnvironment, colors: bool, style_name: List[str], fg: O
         click.echo(f" * {description}")
         click.echo(" * ", nl=False)
         style_.echo(f"This is a sample of some text in the {name} style")
-        click.echo(" * Attributes: " + ", ".join(style_.display_attributes()))
+        click.echo(" * Attributes: ( " + ", ".join(style_.display_attributes()) + " )")
 
 
 def validate_color(color_name: Optional[str]) -> bool:

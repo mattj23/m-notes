@@ -7,7 +7,7 @@ import click
 from mnotes.fix.common import check_for_missing_attr
 from mnotes.notes.markdown_notes import load_all_notes
 from mnotes.notes.checks import note_checks
-from mnotes.environment import MnoteEnvironment, pass_env
+from mnotes.environment import MnoteEnvironment, pass_env, echo_line
 
 from .fix_created import fix_created
 from .fix_author import fix_author
@@ -31,21 +31,24 @@ def mode(env: MnoteEnvironment, ctx: click.core.Context, n: int):
 
     order = ["created", "id", "title", "filename", "author"]
 
+    style = env.config.styles
+
     for check in [note_checks[o] for o in order]:
         missing = check_for_missing_attr(notes, check["check"])
         if missing:
             click.echo()
-            click.echo(click.style(f"Found {len(missing)} notes that are {check['description']}", fg="red"))
+            click.echo(style.warning(f"Found {len(missing)} notes that are {check['description']}"))
             for note in missing[:n]:
                 click.echo(click.style(f" -> {note.rel_path(env.cwd)}"))
             remaining = len(missing) - n
             if remaining > 0:
                 click.echo(click.style(f" -> ... and {remaining} more"))
 
-            click.echo(click.style(f" ({check['hint']})"))
+            click.echo(style.visible(f" ({check['hint']})"))
 
     end_time = time.time()
-    print(f"\nTook {end_time - start_time:0.2f} seconds")
+    click.echo()
+    click.echo(style.success(f"Took {end_time - start_time:0.2f} seconds"))
 
 
 mode.add_command(fix_created)

@@ -22,11 +22,13 @@ class Style:
     def as_dict(self):
         return self.__dict__
 
-    def to_click(self, text) -> str:
+    def __call__(self, text, **kwargs) -> str:
+        d = dict(self.as_dict())
+        d.update(kwargs)
         return click.style(text, **self.as_dict())
 
     def echo(self, text, nl=True):
-        click.echo(self.to_click(text), nl=nl)
+        click.echo(self(text), nl=nl)
 
     def display_attributes(self) -> List[str]:
         return sorted(f"{k}={v}" for k, v in self.as_dict().items())
@@ -34,10 +36,10 @@ class Style:
 
 class Styles:
     def __init__(self, **kwargs):
-        self.warning = Style(**kwargs.get("warning", {}))
-        self.success = Style(**kwargs.get("success", {}))
-        self.fail = Style(**kwargs.get("fail", {}))
-        self.visible = Style(**kwargs.get("visible", {}))
+        self.warning = Style(**kwargs.get("warning", dict(fg="yellow")))
+        self.success = Style(**kwargs.get("success", dict(fg="green", bold=True)))
+        self.fail = Style(**kwargs.get("fail", dict(fg="red", bold=True)))
+        self.visible = Style(**kwargs.get("visible", dict(fg="bright_blue")))
 
         self.map = {
             "warning": self.warning,
@@ -45,6 +47,8 @@ class Styles:
             "success": self.success,
             "visible": self.visible
         }
+
+        self.packed = (self.warning, self.fail, self.success, self.visible)
 
     def to_display_list(self) -> List[Tuple[str, str, Style]]:
         return [
@@ -90,6 +94,12 @@ class MnoteEnvironment:
 
 
 pass_env = click.make_pass_decorator(MnoteEnvironment, ensure=True)
+
+
+def echo_line(*args: str):
+    for chunk in args[:-1]:
+        click.echo(chunk, nl=False)
+    click.echo(args[-1])
 
 
 def load_config():

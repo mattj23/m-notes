@@ -7,10 +7,10 @@ import re
 import click
 from typing import List, Optional
 
-from .common import echo_color, echo_problem_title
+from .common import echo_problem_title
 from mnotes.notes.markdown_notes import NoteMetadata, load_all_notes
 from mnotes.notes.checks import note_checks
-from mnotes.environment import MnoteEnvironment, pass_env
+from mnotes.environment import MnoteEnvironment, pass_env, echo_line
 
 
 date_test_pattern = re.compile(r"^20[\d\.\-\_\s]*\d")
@@ -34,6 +34,8 @@ def fix_filename(env: MnoteEnvironment, files: List, n: Optional[int], complete:
     if working is None:
         return
 
+    style = env.config.styles
+
     changes = []
     proposed_paths = set()
     conflicts = 0
@@ -45,11 +47,11 @@ def fix_filename(env: MnoteEnvironment, files: List, n: Optional[int], complete:
             echo_problem_title("Note to Change Filename", note)
 
             if note.id is None:
-                echo_color(" * cannot add ID to filename because ", "note does not have an ID!", "red")
+                echo_line(" * cannot add ID to filename because ", style.warning("note does not have an ID!"))
                 continue
 
             if complete and note.title is None:
-                echo_color(" * can't do a complete rename on this note because the ", "title is empty", "red")
+                echo_line(" * can't do a complete rename on this note because the ", style.warning("title is empty"))
                 continue
 
             directory = os.path.dirname(note.file_path)
@@ -63,37 +65,38 @@ def fix_filename(env: MnoteEnvironment, files: List, n: Optional[int], complete:
             proposed_rel = os.path.relpath(proposed_path, start=os.curdir)
 
             if os.path.exists(proposed_path):
-                echo_color(f" * cannot rename to '{proposed_rel}' because ", "another file already exists", "red",
-                           " at that location")
+                echo_line(f" * cannot rename to '{proposed_rel}' because ",
+                          style.warning("another file already exists"), " at that location")
                 conflicts += 1
                 continue
 
             if proposed_path in proposed_paths:
-                echo_color(f" * cannot rename to '{proposed_rel}' because ", "another file with that name", "red",
-                           " has already been proposed")
+                echo_line(f" * cannot rename to '{proposed_rel}' because ",
+                          style.warning("another file with that name"), " has already been proposed")
                 conflicts += 1
                 continue
 
-            echo_color(" * proposed new filename: ", f"{proposed_rel}", "blue")
+            echo_line(" * proposed new filename: ", style.visible(f"{proposed_rel}"))
             changes.append((note, proposed_path))
 
     click.echo()
     if conflicts > 0:
-        click.echo(click.style(f"There were {conflicts} conflicts", fg="red"))
+        click.echo(style.warning(f"There were {conflicts} conflicts"))
 
     if not changes:
         click.echo(click.style("There were no potential fixes found", bold=True))
         return
 
     if click.confirm(click.style(f"Apply these {len(changes)} changes?", bold=True)):
-        click.echo(click.style("User accepted changes", fg="green", bold=True))
+        click.echo(style.success("User accepted changes"))
         for note, value in changes:
-            print(f"\nMoving {note.title}")
-            print(f" -> from: {os.path.relpath(note.file_path, start=os.curdir)}")
-            print(f" -> to:   {os.path.relpath(value, start=os.curdir)}")
+            click.echo()
+            click.echo(f"Moving {note.title}")
+            click.echo(f" -> from: {os.path.relpath(note.file_path, start=os.curdir)}")
+            click.echo(f" -> to:   {os.path.relpath(value, start=os.curdir)}")
             shutil.move(note.file_path, value)
     else:
-        click.echo(click.style("User rejected changes", fg="red", bold=True))
+        click.echo(style.fail("User rejected changes"))
 
 
 def prepend_id(note: NoteMetadata) -> str:

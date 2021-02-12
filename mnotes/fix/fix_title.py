@@ -5,10 +5,10 @@ import re
 import click
 from typing import List, Optional
 
-from .common import echo_color, echo_problem_title
+from .common import echo_problem_title
 from mnotes.notes.markdown_notes import NoteMetadata, load_all_notes
 from mnotes.notes.checks import note_checks
-from mnotes.environment import MnoteEnvironment, pass_env
+from mnotes.environment import MnoteEnvironment, pass_env, echo_line
 
 header_pattern = re.compile("^# (.*)")
 
@@ -25,6 +25,8 @@ def fix_title(env: MnoteEnvironment, files: List[click.Path], n: Optional[int]):
     if working is None:
         return
 
+    style = env.config.styles
+
     changes = []
     for note in working:
         if n is not None and len(changes) >= n:
@@ -38,10 +40,10 @@ def fix_title(env: MnoteEnvironment, files: List[click.Path], n: Optional[int]):
             header = header_pattern.findall(content[0])
             if header:
                 title = header[0].strip()
-                echo_color(" * header found in content: ", f"{title}", "blue")
+                echo_line(" * header found in content", style.visible(f"{title}"))
                 changes.append((note, title))
             else:
-                echo_color(" * ", "no header", "red", " found in content")
+                echo_line(" * ", style.warning("no header"), " found in context")
 
     click.echo()
     if not changes:
@@ -49,11 +51,11 @@ def fix_title(env: MnoteEnvironment, files: List[click.Path], n: Optional[int]):
         return
 
     if click.confirm(click.style(f"Apply these {len(changes)} changes?", bold=True)):
-        click.echo(click.style("User accepted changes", fg="green", bold=True))
+        click.echo(style.success("User accepted changes"))
         for note, new_title in changes:
             note_with_content = NoteMetadata(note.file_path, store_content=True)
             note_with_content.title = new_title
             note_with_content.save_file()
     else:
-        click.echo(click.style("User rejected changes", fg="red", bold=True))
+        click.echo(style.fail("User rejected changes"))
 

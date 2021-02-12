@@ -7,7 +7,7 @@ from typing import List, Optional
 from .common import echo_problem_title
 from mnotes.notes.markdown_notes import NoteMetadata, local_time_zone, load_all_notes
 from mnotes.notes.checks import note_checks, long_stamp_pattern, from_timestamp_id, file_c_time
-from mnotes.environment import MnoteEnvironment, pass_env
+from mnotes.environment import MnoteEnvironment, pass_env, echo_line
 
 
 @click.command(name="created")
@@ -21,6 +21,8 @@ def fix_created(env: MnoteEnvironment, files: List, n: Optional[int]):
         working = [NoteMetadata(f) for f in files]
     if working is None:
         return
+
+    style = env.config.styles
 
     changes = []
     for note in working:
@@ -38,21 +40,20 @@ def fix_created(env: MnoteEnvironment, files: List, n: Optional[int]):
                     converted = from_timestamp_id(long_stamp[0])
                     got_long_stamp = True
                 except ValueError:
-                    click.echo(click.style(f" * file had long-stamp but it didn't parse to a valid date/time", fg="red"))
+                    echo_line(" * file had long-stamp but it ",  style.warning("didn't parse to a valid date/time"))
                     continue
 
             if got_long_stamp:
                 time_stamp = local_time_zone.localize(converted)
-                click.echo(" * found timestamp in file name: ", nl=False)
-                click.echo(click.style(f"{time_stamp}", fg="blue"))
+                echo_line(" * found timestamp in file name: ", style.visible(f"{time_stamp}"))
                 changes.append((note, time_stamp))
 
             else:
                 c_time, is_created = file_c_time(note.file_path)
                 c_time = local_time_zone.localize(c_time)
                 extract_mode = 'created' if is_created else 'last modified'
-                click.echo(f" * extracted {extract_mode} timestamp from file system: ", nl=False)
-                click.echo(click.style(f"{c_time}", fg="blue"))
+                echo_line(f" * extracted ", style.visible(extract_mode), " timestamp from file system: ",
+                          style.visible(f"{c_time}"))
                 changes.append((note, c_time))
 
     if not changes:
@@ -62,12 +63,12 @@ def fix_created(env: MnoteEnvironment, files: List, n: Optional[int]):
 
     click.echo()
     if click.confirm(click.style(f"Apply these {len(changes)} changes?", bold=True)):
-        click.echo(click.style("User accepted changes", fg="green", bold=True))
+        click.echo(style.success("User accepted changes"))
         for note, value in changes:
             note_with_content = NoteMetadata(note.file_path, store_content=True)
             note_with_content.created = value
             note_with_content.save_file()
     else:
-        click.echo(click.style("User rejected changes", fg="red", bold=True))
+        click.echo(style.fail("User rejected changes"))
 
 
