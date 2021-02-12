@@ -7,11 +7,16 @@ from typing import List, Optional
 from .common import echo_problem_title
 from mnotes.notes.markdown_notes import NoteMetadata, local_time_zone, load_all_notes
 from mnotes.notes.checks import note_checks, long_stamp_pattern, from_timestamp_id, file_c_time
+from mnotes.environment import MnoteEnvironment, pass_env
 
 
-def mode(working_path: str, files: List, count: Optional[int]):
+@click.command(name="created")
+@click.argument("files", nargs=-1, type=click.Path())
+@click.option("-n", default=None, type=int, help="Max number of fixes to perform")
+@pass_env
+def fix_created(env: MnoteEnvironment, files: List, n: Optional[int]):
     if not files:
-        working = load_all_notes(working_path)
+        working = load_all_notes(env.cwd)
     else:
         working = [NoteMetadata(f) for f in files]
     if working is None:
@@ -19,7 +24,7 @@ def mode(working_path: str, files: List, count: Optional[int]):
 
     changes = []
     for note in working:
-        if count is not None and len(changes) >= count:
+        if n is not None and len(changes) >= n:
             break
 
         if note_checks["created"]["check"](note):

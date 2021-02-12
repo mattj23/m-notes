@@ -10,6 +10,7 @@ from typing import List, Optional
 from .common import echo_color, echo_problem_title
 from mnotes.notes.markdown_notes import NoteMetadata, load_all_notes
 from mnotes.notes.checks import note_checks
+from mnotes.environment import MnoteEnvironment, pass_env
 
 
 date_test_pattern = re.compile(r"^20[\d\.\-\_\s]*\d")
@@ -17,40 +18,17 @@ valid_chars_pattern = re.compile(r"[^a-z0-9]")
 delete_words = {"on", "to", "the", "of", "and", "is", "at", "a", "an", "for", "in"}
 
 
-def prepend_id(note: NoteMetadata) -> str:
-    base_name, extension = os.path.splitext(note.file_name)
-    return f"{note.id}_{base_name.strip()}{extension}"
-
-
-def add_words_up_to(length: int, word_set: List[str]) -> List[str]:
-    working_words = list(word_set)
-    built_words = []
-    while working_words:
-        active_word = working_words.pop(0)
-        temp = built_words + [active_word]
-        if len(temp) == 1 or len("-".join(temp)) < length:
-            built_words = list(temp)
-        else:
-            return built_words
-    return built_words
-
-
-def complete_rewrite(note: NoteMetadata) -> str:
-    # Remove leading dates
-    working = date_test_pattern.sub("", note.title.lower())
-    working = valid_chars_pattern.sub(" ", working)
-    all_words = working.split()
-    cleaned_words = [word for word in all_words if word not in delete_words]
-
-    enough_words = add_words_up_to(64, cleaned_words)
-    working = "-".join(enough_words)
-
-    return f"{note.id}-{working}.md"
-
-
-def mode(working_path: str, files: List, count: Optional[int], complete: bool, force: bool):
+@click.command(name="filename")
+@click.argument("files", nargs=-1, type=click.Path())
+@click.option("-n", default=None, type=int, help="Max number of fixes to perform")
+@click.option("--complete", "complete", flag_value=True,
+              help="Completely rewrite the filename from the title information")
+@click.option("--force", "force", flag_value=True,
+              help="Run the rename on all notes specified (use with --complete)")
+@pass_env
+def fix_filename(env: MnoteEnvironment, files: List, n: Optional[int], complete: bool, force: bool):
     if not files:
-        working = load_all_notes(working_path)
+        working = load_all_notes(env.cwd)
     else:
         working = [NoteMetadata(f) for f in files]
     if working is None:
@@ -60,7 +38,7 @@ def mode(working_path: str, files: List, count: Optional[int], complete: bool, f
     proposed_paths = set()
     conflicts = 0
     for note in working:
-        if count is not None and len(changes) >= count:
+        if n is not None and len(changes) >= n:
             break
 
         if note_checks["filename"]["check"](note) or (complete and force):
@@ -118,4 +96,33 @@ def mode(working_path: str, files: List, count: Optional[int], complete: bool, f
         click.echo(click.style("User rejected changes", fg="red", bold=True))
 
 
+def prepend_id(note: NoteMetadata) -> str:
+    base_name, extension = os.path.splitext(note.file_name)
+    return f"{note.id}_{base_name.strip()}{extension}"
+
+
+def add_words_up_to(length: int, word_set: List[str]) -> List[str]:
+    working_words = list(word_set)
+    built_words = []
+    while working_words:
+        active_word = working_words.pop(0)
+        temp = built_words + [active_word]
+        if len(temp) == 1 or len("-".join(temp)) < length:
+            built_words = list(temp)
+        else:
+            return built_words
+    return built_words
+
+
+def complete_rewrite(note: NoteMetadata) -> str:
+    # Remove leading dates
+    working = date_test_pattern.sub("", note.title.lower())
+    working = valid_chars_pattern.sub(" ", working)
+    all_words = working.split()
+    cleaned_words = [word for word in all_words if word not in delete_words]
+
+    enough_words = add_words_up_to(64, cleaned_words)
+    working = "-".join(enough_words)
+
+    return f"{note.id}-{working}.md"
 

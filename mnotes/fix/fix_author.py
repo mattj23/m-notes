@@ -7,19 +7,27 @@ from typing import List, Optional
 from .common import echo_problem_title
 from mnotes.notes.markdown_notes import NoteMetadata, load_all_notes
 from mnotes.notes.checks import note_checks
+from mnotes.environment import MnoteEnvironment, pass_env
 
 
-def mode(working_path: str, author: Optional[str], files: List, count: Optional[int]):
+@click.command(name="author")
+@click.option("-n", default=None, type=int, help="Max number of fixes to perform")
+@click.option("-a", "--author", default=None, type=str, help="Name of author to assign (leave empty for default)")
+@click.argument("files", nargs=-1, type=click.Path())
+@pass_env
+def fix_author(env: MnoteEnvironment, n: Optional[int], author: Optional[str], files: List):
     if not files:
-        working = load_all_notes(working_path)
+        working = load_all_notes(env.cwd)
     else:
         working = [NoteMetadata(f) for f in files]
     if working is None:
         return
 
+    author = env.config.author if author is None else author
+
     changes = []
     for note in working:
-        if count is not None and len(changes) >= count:
+        if n is not None and len(changes) >= n:
             break
 
         if note_checks["author"]["check"](note):

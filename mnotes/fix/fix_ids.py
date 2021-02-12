@@ -11,9 +11,17 @@ from .common import echo_problem_title, echo_color
 from mnotes.notes.markdown_notes import load_all_notes, get_existing_ids, NoteMetadata
 from mnotes.notes.checks import note_checks, long_stamp_format
 
+from mnotes.environment import MnoteEnvironment, pass_env
 
-def mode(working_path: str, files: List, count: Optional[int], resolve: bool):
-    all_notes = load_all_notes(working_path)
+
+@click.command(name="id")
+@click.option("-n", default=None, type=int, help="Max number of fixes to perform")
+@click.option("--resolve", "resolve", flag_value=True,
+              help="Attempt to resolve ID conflicts by adjusting creation time")
+@click.argument("files", nargs=-1, type=click.Path())
+@pass_env
+def fix_id(env: MnoteEnvironment, files: List[click.Path], n: Optional[int], resolve: bool):
+    all_notes = load_all_notes(env.cwd)
     if not files:
         working = list(all_notes)
     else:
@@ -31,7 +39,7 @@ def mode(working_path: str, files: List, count: Optional[int], resolve: bool):
     new_ids: Set[str] = set()
     conflicts = 0
     for note in working:
-        if count is not None and len(changes) >= count:
+        if n is not None and len(changes) >= n:
             break
 
         if note_checks["id"]["check"](note):
