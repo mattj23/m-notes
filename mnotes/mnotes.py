@@ -3,14 +3,12 @@ import pkg_resources
 import click
 from typing import List, Optional
 
+from mnotes.environment import MnoteEnvironment, pass_env
 import mnotes.modes as modes
+import mnotes.config
 
-from mnotes.environment import MnoteEnvironment
 
 mnote_version = pkg_resources.require("m-notes")[0].version
-
-
-pass_env = click.make_pass_decorator(MnoteEnvironment, ensure=True)
 
 
 @click.group(invoke_without_command=True)
@@ -28,6 +26,9 @@ def main(ctx):
     else:
         pass
         # running the subcommand
+
+
+main.add_command(mnotes.config.config)
 
 
 @main.command()
