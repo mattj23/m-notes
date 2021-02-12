@@ -13,7 +13,7 @@ mnote_version = pkg_resources.require("m-notes")[0].version
 
 @click.group(invoke_without_command=True)
 @click.pass_context
-def main(ctx):
+def main(ctx: click.core.Context):
     click.echo()
     click.echo(click.style(f"M-Notes (v{mnote_version}) Markdown Note Manager", bold=True, underline=True))
 
@@ -26,6 +26,14 @@ def main(ctx):
     else:
         pass
         # running the subcommand
+
+
+@click.command()
+@click.argument("set-name", type=str)
+@click.pass_context
+def mgo(ctx: click.core.Context, set_name: str):
+    """ Hi there! This will hopefully become a tool to help navigate between collections"""
+    click.echo(f"{set_name}")
 
 
 main.add_command(mnotes.config.config)

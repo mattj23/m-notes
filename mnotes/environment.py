@@ -1,11 +1,52 @@
 import os
 import click
 import yaml
-from typing import Optional
-
+from typing import Optional, Dict, Tuple, List
 
 APPLICATION_NAME = "m-notes"
 CONFIG_FILE = "m-notes.yaml"
+
+
+class Style:
+    def __init__(self, **kwargs):
+        if kwargs is None:
+            kwargs = {}
+
+        self.fg: Optional[str] = kwargs.get("fg", None)
+        self.bg: Optional[str] = kwargs.get("bg", None)
+        self.bold: Optional[bool] = kwargs.get("bold", None)
+        self.underline: Optional[bool] = kwargs.get("underline", None)
+        self.blink: Optional[bool] = kwargs.get("blink", None)
+        self.reverse: Optional[bool] = kwargs.get("reverse", None)
+
+    def as_dict(self):
+        return self.__dict__
+
+    def to_click(self, text) -> str:
+        return click.style(text, **self.as_dict())
+
+    def echo(self, text, nl=True):
+        click.echo(self.to_click(text), nl=nl)
+
+    def display_attributes(self) -> List[str]:
+        return sorted(f"{k} = {v}" for k, v in self.as_dict().items())
+
+
+class Styles:
+    def __init__(self, **kwargs):
+        self.warning = Style(**kwargs.get("warning", {}))
+        self.success = Style(**kwargs.get("success", {}))
+        self.fail = Style(**kwargs.get("fail", {}))
+        self.visible = Style(**kwargs.get("visible", {}))
+
+    def to_display_list(self) -> List[Tuple[str, str, Style]]:
+        return [
+            ("warning", "Style for text that highlights problems or issues", self.warning),
+            ("fail", "Style for text that shows when an operation has failed", self.fail),
+            ("success", "Style for text that shows a success condition", self.success),
+            ("visible", "Style for text that should be visible or highlighted in a way that draws attention to it, but"
+             " is not necessarily good or bad", self.visible),
+        ]
 
 
 class Config:
@@ -13,9 +54,12 @@ class Config:
         self.author: Optional[str] = kwargs.get("author", None)
         self.file: str = kwargs.get("file")
 
+        style_config: Dict = kwargs.get("styles", {})
+        self.styles = Styles(**style_config)
+
     def print(self):
-        click.echo(click.style(f" * active config file: {self.file}", fg="blue"))
-        click.echo(click.style(f" * default author: {self.author}", fg="blue"))
+        click.echo(f" * active config file: {self.file}")
+        click.echo(f" * default author: {self.author}")
 
     def write(self):
         data = {
@@ -31,7 +75,7 @@ class MnoteEnvironment:
         self.config: Config = load_config()
 
     def print(self):
-        click.echo(click.style(f" * current directory: {self.cwd}", fg="blue"))
+        click.echo(f" * current directory: {self.cwd}")
 
 
 pass_env = click.make_pass_decorator(MnoteEnvironment, ensure=True)
