@@ -59,12 +59,28 @@ This is some text in the sample note 0
 MD_SAMPLE_NOTE_1 = """
 ...
 title: Note Sample 1
-author: Alice Alisson
+author: Alice Alison
 created: '2021-02-13T16:06:41.927650-05:00'
 id: 20210213160641
 ...
 # Sample Note 1
 
 This is some text in the sample note 1
+"""
+
+MD_EXTRA_METADATA = """
+...
+title: Extra Metadata Example
+author: Bob Bobertsmith
+created: '2021-02-13T17:29:11.879245-05:00'
+id: 20210213172911
+tags:
+ - synergy
+ - upcycle
+source: IPhone 19
+---
+# Extra metadata
+
+This note has extra metadata in it
 """
 

@@ -1,11 +1,9 @@
 """
     Tool for importing markdown and their metadata
 """
-
-import os
 import yaml
-import pytz
 
+from io import StringIO
 from enum import Enum
 from dataclasses import dataclass, asdict
 from typing import List, Dict, Optional, Tuple, Set, Any, Union
@@ -14,7 +12,10 @@ from datetime import tzinfo
 
 from ..utility.file_system import FileSystemProvider
 
-local_time_zone: tzinfo = pytz.timezone("America/New_York")
+
+class FailedMetadataException(Exception):
+    """ This operation cannot be completed because the note contains front matter which failed to parse. """
+    pass
 
 
 class MetaData(Enum):
@@ -40,69 +41,37 @@ class NoteInfo:
         return asdict(self)
 
 
-class NoteMetadata:
-    def __init__(self, file_path: str, store_content=False):
-        self.file_path = file_path
-        self.file_name = os.path.basename(self.file_path)
-        self.raw: Optional[Dict] = None
-        self.created: Optional[DateTime] = None
-        self.id: Optional[str] = None
-        self.title: Optional[str] = None
-        self.author: Optional[str] = None
-        self.state: MetaData = MetaData.UNKNOWN
+class Note:
+    def __init__(self, **kwargs):
+        self.info: Optional[NoteInfo] = kwargs.get("info", None)
+        self.front_matter: Optional[Dict] = kwargs.get("front_matter", None)
+        self.content: Optional[str] = kwargs.get("content", None)
 
-        with open(file_path, "r") as handle:
-            content = handle.read()
+    def to_file_text(self) -> str:
+        """
+        Build the textual content of a file which would contain this note, re-serializing the front matter in YAML and
+        inserting it on top of the content string.
+        :return: The full text of the markdown note, front-matter included
+        """
+        assert isinstance(self.info, NoteInfo)
 
-        stripped = content.strip().replace("...", "---")
+        if self.info.state == MetaData.FAILED:
+            raise FailedMetadataException("It's unsafe to rebuild this note because it potentially contains front "
+                                          "matter which simply failed to parse.")
 
-        # Attempt to extract YAML front matter from the note. If none can be found the result will be None and
-        # we can exit the initialization
-        self.raw, normal_content = _extract_yaml_front_matter(stripped)
-        if store_content:
-            self.content = normal_content
+        assert isinstance(self.front_matter, Dict)
 
-        if self.raw is None:
-            self.raw = {
-                "created": None,
-                "title": None,
-                "author": None,
-            }
-            return
+        info_dict = self.info.to_dict()
+        for key in ("id", "title", "author", "created"):
+            self.front_matter[key] = info_dict[key]
 
-        if "created" in self.raw:
-            created = self.raw["created"]
-            if isinstance(created, str):
-                self.created = DateTime.fromisoformat(self.raw["created"]).astimezone(local_time_zone)
-            elif isinstance(created, DateTime):
-                self.created = created
+        with StringIO() as writer:
+            writer.write("---\n")
+            yaml.dump(self.front_matter, writer)
+            writer.write("---\n")
+            writer.write(self.content)
 
-        self.title = self.raw.get("title")
-        self.id = self.raw.get("id")
-        self.author = self.raw.get("author")
-
-    def rel_path(self, start: str) -> str:
-        return os.path.relpath(self.file_path, start=start)
-
-    @property
-    def has_metadata(self):
-        return self.raw is not None
-
-    def save_file(self):
-        if not hasattr(self, "content"):
-            raise AttributeError("This object was loaded without storing the content, we cannot save it back to disk")
-        self.raw["created"] = self.created
-        self.raw["id"] = self.id
-        self.raw["title"] = self.title
-        self.raw["author"] = self.author
-        output = dict(self.raw)
-        output["created"] = self.created.isoformat()
-
-        with open(self.file_path, "w") as handle:
-            handle.write("---\n")
-            yaml.dump(self.raw, handle)
-            handle.write("---\n")
-            handle.write(self.content)
+            return writer.getvalue()
 
 
 class NoteBuilder:
@@ -113,6 +82,11 @@ class NoteBuilder:
         self.provider = provider
 
     def parse_date_time(self, value) -> Optional[DateTime]:
+        """
+        Create an optional datetime from one of the three possible values that the front matter might contain: a None,
+        an ISO formatted representation, or an already parsed datetime. If the value is a string but cannot be parsed,
+        a ValueError will be raised.
+        """
         if value is None:
             return None
 
@@ -123,7 +97,12 @@ class NoteBuilder:
 
         raise ValueError(f"Could not decipher creation date from data: '{value}'")
 
-    def load_info(self, file_path: str) -> NoteInfo:
+    def _load_info_and_content(self, file_path: str) -> Tuple[NoteInfo, Optional[Dict], Optional[str]]:
+        """
+        Load a note's information and textual content from the file provider.
+        :param file_path: must be a valid path to a file the provider can reach
+        :return: a NoteInfo data object representing the results of the metadata parse operations
+        """
         with self.provider.read_file(file_path) as handle:
             content = handle.read()
 
@@ -137,6 +116,7 @@ class NoteBuilder:
             info_data["info"] = "Failed to parse YAML from document"
         elif state == MetaData.MISSING:
             info_data["info"] = "File missing metadata"
+            meta_data = {}
         else:
             info_data.update({
                 "id": meta_data.get("id", None),
@@ -152,28 +132,34 @@ class NoteBuilder:
                 info_data["info"] = "Failed to parse creation time stamp"
                 info_data["state"] = MetaData.FAILED
 
-        return NoteInfo(**info_data)
+        return NoteInfo(**info_data), meta_data, markdown_content
 
+    def load_info(self, file_path: str) -> NoteInfo:
+        """
+        Load a note and create a NoteInfo object from its contents. The NoteInfo.state field will be set based on the
+        outcome of the operation, and can be MISSING, FAILED, or UNKNOWN. If one of the first two, the NoteInfo.info
+        field will contain a message describing why the program believes that operation didn't complete.
 
-def get_existing_ids(notes: List[NoteMetadata]) -> Set[str]:
-    """
-    Get a set of existing note IDs from a list of note metadata objects. Will throw a ValueError if there are
-    duplicated identifiers.
-    """
-    id_set = set()
-    id_list = [note.id for note in notes if note.id is not None]
-    duplicates = []
+        MISSING means no front-matter was detected, FAILED means we believe there is front matter but it's somehow
+        malformed, not parse-able, or the creation date can't be parsed, and UNKNOWN means it loaded correctly but
+        the validity of the contents can't be vouched for.
 
-    for note_id in id_list:
-        if note_id in id_set:
-            duplicates.append(note_id)
-        else:
-            id_set.add(note_id)
+        :param file_path: must be a valid path to a file the provider can reach
+        :return: a NoteInfo data object representing the results of the metadata parse operations
+        """
+        info, _, _ = self._load_info_and_content(file_path)
+        return info
 
-    if duplicates:
-        raise ValueError(f"The following ids are duplicated: {', '.join(duplicates)}")
-
-    return id_set
+    def load_note(self, file_path: str) -> Note:
+        """
+        Load and create a Note object from a file path. The Note.info field will contain a standard NoteInfo object
+        which will provide the state of the metadata loaded from the file.
+        :param file_path: must be a valid path to a file the provider can reach
+        :return: a Note data object containing both the contents of the metadata parse and the markdown content of the
+        note itself
+        """
+        info, meta_data, markdown_content = self._load_info_and_content(file_path)
+        return Note(info=info, front_matter=meta_data, content=markdown_content)
 
 
 def _extract_yaml_front_matter(content: str) -> Tuple[MetaData, Optional[Dict], str]:
