@@ -72,7 +72,7 @@ def fix_id(env: MnoteEnvironment, files: List[click.Path], n: Optional[int], res
 
                     echo_line(f" * propose changing note creation time by ",
                               style.visible("{offset} seconds to {new_c_time}"))
-                    echo_line(" * new ID would then be ", style.visible("{new_id}"))
+                    echo_line(" * new ID would then be ", style.visible(f"{new_id}"))
                     changes.append((note, new_id, new_c_time))
                     new_ids.add(new_id)
                     continue
@@ -81,7 +81,7 @@ def fix_id(env: MnoteEnvironment, files: List[click.Path], n: Optional[int], res
                     conflicts += 1
                     continue
 
-            echo_line(" * id from creation timestamp = ", style.visible("{new_id}"))
+            echo_line(" * id from creation timestamp = ", style.visible(f"{new_id}"))
             new_ids.add(new_id)
             changes.append((note, new_id, None))
 
