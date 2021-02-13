@@ -44,6 +44,18 @@ id: 20210213160222
 This front matter contains an impossible timestamp that will cause the datetime parser to fail
 """
 
+MD_BROKEN_TIMESTAMP_2 = """
+---
+title: "My Dissertation: a lesson on enduring tasks that never end"
+author: Jane Doe
+created: 3
+id: 20210213160222
+---
+# This is a note with an invalid timestamp
+
+This front matter contains an impossible timestamp that will cause the datetime parser to fail
+"""
+
 MD_SAMPLE_NOTE_0 = """
 ...
 title: Note Sample 0

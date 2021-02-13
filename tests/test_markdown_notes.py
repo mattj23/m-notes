@@ -28,6 +28,7 @@ def mock_builder():
         "/no_end_token.md": {"content": sample.MD_MISSING_END_TOKEN, "modified": 100},
         "/corrupted.md": {"content": sample.MD_CORRUPTED_YAML, "modified": 100},
         "/broken_timestamp.md": {"content": sample.MD_BROKEN_TIMESTAMP, "modified": 100},
+        "/broken_timestamp2.md": {"content": sample.MD_BROKEN_TIMESTAMP_2, "modified": 100},
         "/ok.md": {"content": sample.MD_SAMPLE_NOTE_0, "modified": 100},
         "/extra.md": {"content": sample.MD_EXTRA_METADATA, "modified": 100},
     }
@@ -53,6 +54,11 @@ def test_corrupted_yaml(mock_builder):
 
 def test_broken_timestamp(mock_builder):
     info = mock_builder.load_info("/broken_timestamp.md")
+    assert info.state == MetaData.FAILED
+
+
+def test_broken_timestamp_2(mock_builder):
+    info = mock_builder.load_info("/broken_timestamp2.md")
     assert info.state == MetaData.FAILED
 
 
