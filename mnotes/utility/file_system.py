@@ -7,6 +7,7 @@ import os
 import abc
 from dataclasses import dataclass, asdict
 from typing import List, Optional, Callable, Dict, TextIO
+import hashlib
 
 
 def _always_true(x):
@@ -35,10 +36,13 @@ class FileSystemProvider(abc.ABC):
     def get_all(self, path: str, predicate: Optional[Callable[[str], bool]] = None) -> List[FileInfo]:
         pass
 
-    def read_file(self, path) -> TextIO:
+    def read_file(self, path: str) -> TextIO:
         pass
 
-    def write_file(self, path) -> TextIO:
+    def write_file(self, path: str) -> TextIO:
+        pass
+
+    def checksum(self, path: str) -> str:
         pass
 
 
@@ -58,8 +62,18 @@ class FileSystem(FileSystemProvider):
 
         return results
 
-    def read_file(self, path) -> TextIO:
+    def read_file(self, path: str) -> TextIO:
         return open(path, "r")
 
-    def write_file(self, path) -> TextIO:
+    def write_file(self, path: str) -> TextIO:
         return open(path, "w")
+
+    def checksum(self, path: str) -> str:
+        sha = hashlib.sha1()
+        with open(path, "rb") as handle:
+            while True:
+                data = handle.read(65536)
+                if not data:
+                    break
+                sha.update(data)
+        return sha.hexdigest()
