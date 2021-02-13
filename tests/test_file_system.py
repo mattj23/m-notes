@@ -31,3 +31,4 @@ def test_file_info_from_dict():
     assert info.last_modified == 100
     assert info.size == 10
     assert info.check_sum is None
+

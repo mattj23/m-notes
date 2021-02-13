@@ -5,9 +5,12 @@
 
 import os
 import abc
-from datetime import datetime as DateTime
 from dataclasses import dataclass, asdict
-from typing import List, Optional, Callable, Dict
+from typing import List, Optional, Callable, Dict, TextIO
+
+
+def _always_true(x):
+    return True
 
 
 @dataclass
@@ -26,18 +29,21 @@ class FileInfo:
         return asdict(self)
 
 
-
 class FileSystemProvider(abc.ABC):
+    """ Abstract base class encapsulating all operations which interact with the file system. """
 
     def get_all(self, path: str, predicate: Optional[Callable[[str], bool]] = None) -> List[FileInfo]:
         pass
 
+    def read_file(self, path) -> TextIO:
+        pass
 
-def _always_true(x):
-    return True
+    def write_file(self, path) -> TextIO:
+        pass
 
 
 class FileSystem(FileSystemProvider):
+    """ Concrete implementation of a cross-platform FileSystemProvider based on Python's os and shutil module. """
 
     def get_all(self, path: str, predicate: Optional[Callable[[str], bool]] = None) -> List[FileInfo]:
         predicate = _always_true if predicate is None else predicate
@@ -51,3 +57,9 @@ class FileSystem(FileSystemProvider):
                 results.append(FileInfo(directory, file_name, modified, size))
 
         return results
+
+    def read_file(self, path) -> TextIO:
+        return open(path, "r")
+
+    def write_file(self, path) -> TextIO:
+        return open(path, "w")

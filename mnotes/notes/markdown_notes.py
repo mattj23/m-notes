@@ -7,12 +7,14 @@ import yaml
 import pytz
 
 from enum import Enum
-from typing import List, Dict, Optional, Tuple, Set
+from dataclasses import dataclass, asdict
+from typing import List, Dict, Optional, Tuple, Set, Any, Union
 from datetime import datetime as DateTime
+from datetime import tzinfo
 
 from ..utility.file_system import FileSystemProvider
 
-local_time_zone = pytz.timezone("America/New_York")
+local_time_zone: tzinfo = pytz.timezone("America/New_York")
 
 
 class MetaData(Enum):
@@ -24,6 +26,18 @@ class MetaData(Enum):
     OK = 5          # The metadata has a validated unique ID
 
 
+@dataclass
+class NoteInfo:
+    file_path: str
+    created: Optional[DateTime]
+    id: Optional[str]
+    title: Optional[str]
+    author: Optional[str]
+    state: MetaData = MetaData.UNKNOWN
+    info: Optional[str] = None
+
+    def to_dict(self) -> Dict:
+        return asdict(self)
 
 
 class NoteMetadata:
@@ -92,20 +106,53 @@ class NoteMetadata:
 
 
 class NoteBuilder:
-    """ Factory class to load the note information from a FileSystemProvider """
+    """ Factory class to load and save the note information from a FileSystemProvider """
 
-    def __init__(self, provider: FileSystemProvider):
+    def __init__(self, provider: FileSystemProvider, local_tz: tzinfo):
+        self.local_zone = local_tz
         self.provider = provider
 
+    def parse_date_time(self, value) -> Optional[DateTime]:
+        if value is None:
+            return None
 
-def load_all_notes(working_directory: str) -> List[NoteMetadata]:
-    notes = []
-    for root, dirs, files in os.walk(working_directory):
-        for f in filter(lambda x: x.endswith(".md"), files):
-            path = os.path.join(root, f)
-            notes.append(NoteMetadata(path))
+        if isinstance(value, str):
+            return DateTime.fromisoformat(value).astimezone(self.local_zone)
+        if isinstance(value, DateTime):
+            return value
 
-    return notes
+        raise ValueError(f"Could not decipher creation date from data: '{value}'")
+
+    def load_info(self, file_path: str) -> NoteInfo:
+        with self.provider.read_file(file_path) as handle:
+            content = handle.read()
+
+        state, meta_data, markdown_content = _extract_yaml_front_matter(content)
+
+        # State can be either MISSING (no yaml front matter detected), FAILED (front matter was detected but was not
+        # parseable), or UNKNOWN (it was loaded but we don't know the ID state yet)
+        info_data = { "file_path": file_path, "state": state }
+
+        if state == MetaData.FAILED:
+            info_data["info"] = "Failed to parse YAML from document"
+        elif state == MetaData.MISSING:
+            info_data["info"] = "File missing metadata"
+        else:
+            info_data.update({
+                "id": meta_data.get("id", None),
+                "title": meta_data.get("title", None),
+                "author": meta_data.get("author", None),
+            })
+
+        # The parsing of the creation date is somewhat complicated and has the potential to fail
+        try:
+            info_data["created"] = self.parse_date_time(meta_data.get("created", None))
+        except ValueError as e:
+            info_data["created"] = None
+            info_data["info"] = "Failed to parse creation time stamp"
+            info_data["state"] = MetaData.FAILED
+
+        return NoteInfo(**info_data)
 
 
 def get_existing_ids(notes: List[NoteMetadata]) -> Set[str]:
@@ -129,7 +176,7 @@ def get_existing_ids(notes: List[NoteMetadata]) -> Set[str]:
     return id_set
 
 
-def _extract_yaml_front_matter(content: str) -> Tuple[Optional[Dict], str]:
+def _extract_yaml_front_matter(content: str) -> Tuple[MetaData, Optional[Dict], str]:
     """
     From a string containing the content of a markdown file that may or may not have front matter, this function will
     attempt to discover and deserialize YAML front matter into a python dictionary. This requires the file to start
@@ -138,12 +185,12 @@ def _extract_yaml_front_matter(content: str) -> Tuple[Optional[Dict], str]:
     If it appears that there should be front matter but the information does not deserialize it will throw an error
     instead of returning None.
     :param content: the text content of the file
-    :return: either None or a parsed dictionary
+    :return:
     """
     valid_tokens = ["...", "---"]
     lines = content.strip().split("\n")
     if lines[0].strip() not in valid_tokens:
-        return None, content
+        return MetaData.MISSING, None, content
 
     front_matter_lines = []
     normal_lines = []
@@ -160,15 +207,15 @@ def _extract_yaml_front_matter(content: str) -> Tuple[Optional[Dict], str]:
 
     # If we had the start of a front matter block but never ended it we return None
     if not is_complete:
-        return None, content
+        return MetaData.FAILED, None, content
 
     normal_content = "\n".join(normal_lines)
 
     try:
         parsed = yaml.safe_load("\n".join(front_matter_lines))
-        return parsed, normal_content
+        return MetaData.UNKNOWN, parsed, normal_content
     except:
-        raise ValueError("Could not parse the extracted front matter")
+        return MetaData.FAILED, None, content
 
 
 
