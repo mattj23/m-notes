@@ -6,10 +6,24 @@ import os
 import yaml
 import pytz
 
+from enum import Enum
 from typing import List, Dict, Optional, Tuple, Set
 from datetime import datetime as DateTime
 
+from ..utility.file_system import FileSystemProvider
+
 local_time_zone = pytz.timezone("America/New_York")
+
+
+class MetaData(Enum):
+    UNKNOWN = 0     # Initial, unknown state
+    MISSING = 1     # The note was missing metadata completely
+    FAILED = 2      # The metadata is presumably there but could not be parsed
+    NO_ID = 3       # The metadata is missing an ID
+    CONFLICT = 4    # The metadata has an ID conflict
+    OK = 5          # The metadata has a validated unique ID
+
+
 
 
 class NoteMetadata:
@@ -21,6 +35,7 @@ class NoteMetadata:
         self.id: Optional[str] = None
         self.title: Optional[str] = None
         self.author: Optional[str] = None
+        self.state: MetaData = MetaData.UNKNOWN
 
         with open(file_path, "r") as handle:
             content = handle.read()
@@ -74,6 +89,13 @@ class NoteMetadata:
             yaml.dump(self.raw, handle)
             handle.write("---\n")
             handle.write(self.content)
+
+
+class NoteBuilder:
+    """ Factory class to load the note information from a FileSystemProvider """
+
+    def __init__(self, provider: FileSystemProvider):
+        self.provider = provider
 
 
 def load_all_notes(working_directory: str) -> List[NoteMetadata]:
@@ -147,8 +169,6 @@ def _extract_yaml_front_matter(content: str) -> Tuple[Optional[Dict], str]:
         return parsed, normal_content
     except:
         raise ValueError("Could not parse the extracted front matter")
-
-
 
 
 

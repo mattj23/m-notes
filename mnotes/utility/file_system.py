@@ -6,8 +6,8 @@
 import os
 import abc
 from datetime import datetime as DateTime
-from dataclasses import dataclass
-from typing import List, Optional, Callable
+from dataclasses import dataclass, asdict
+from typing import List, Optional, Callable, Dict
 
 
 @dataclass
@@ -17,6 +17,14 @@ class FileInfo:
     last_modified: float
     size: int
     check_sum: Optional[str] = None
+
+    @property
+    def full_path(self) -> str:
+        return os.path.join(self.directory, self.file_name)
+
+    def to_dict(self) -> Dict:
+        return asdict(self)
+
 
 
 class FileSystemProvider(abc.ABC):

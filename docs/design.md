@@ -19,6 +19,11 @@ The index would basically hold three(?) things:
 
 The principle of the index is to cache information about the notes so that they do not need to be completely reloaded every time the program runs. Data can be guessed at whether it's valid by either comparing timestamp and last modified date (like rsync) or checksums.
 
+### Global Index
+The global index is a parent to each index. Its data is stored in the configuration folder and is a simple yaml configuration file with a list key/value pairs where the key is the index name and the value is a dictionary containing properties (currently just the path)
+
+Loading all of the indices involves loading them all in order, but building a master ID index that is checked against when each note is loaded. Notes that conflict must be marked as conflicting somehow.
+
 ### Construction
 The index is initially constructable from the data in the folder.  If the index data is lost or destroyed it should be possible to competely rebuild it.
 
