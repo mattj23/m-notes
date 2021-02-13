@@ -20,9 +20,9 @@ setuptools.setup(
     ],
     python_requires='>=3.7',
     install_requires=[
-        "pytz>=2021.1",
         "PyYAML>=5.4.1",
-        "click>=7.1.2"
+        "click>=7.1.2",
+        "python-dateutil>=2.8.1"
     ],
     entry_points={
         "console_scripts": [

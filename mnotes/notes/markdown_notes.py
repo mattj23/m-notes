@@ -18,12 +18,12 @@ local_time_zone: tzinfo = pytz.timezone("America/New_York")
 
 
 class MetaData(Enum):
-    UNKNOWN = 0     # Initial, unknown state
-    MISSING = 1     # The note was missing metadata completely
-    FAILED = 2      # The metadata is presumably there but could not be parsed
-    NO_ID = 3       # The metadata is missing an ID
-    CONFLICT = 4    # The metadata has an ID conflict
-    OK = 5          # The metadata has a validated unique ID
+    UNKNOWN = 0  # Initial, unknown state
+    MISSING = 1  # The note was missing metadata completely
+    FAILED = 2  # The metadata is presumably there but could not be parsed
+    NO_ID = 3  # The metadata is missing an ID
+    CONFLICT = 4  # The metadata has an ID conflict
+    OK = 5  # The metadata has a validated unique ID
 
 
 @dataclass
@@ -131,7 +131,7 @@ class NoteBuilder:
 
         # State can be either MISSING (no yaml front matter detected), FAILED (front matter was detected but was not
         # parseable), or UNKNOWN (it was loaded but we don't know the ID state yet)
-        info_data = { "file_path": file_path, "state": state }
+        info_data = {"file_path": file_path, "state": state, "created": None, "id": None, "title": None, "author": None}
 
         if state == MetaData.FAILED:
             info_data["info"] = "Failed to parse YAML from document"
@@ -144,13 +144,13 @@ class NoteBuilder:
                 "author": meta_data.get("author", None),
             })
 
-        # The parsing of the creation date is somewhat complicated and has the potential to fail
-        try:
-            info_data["created"] = self.parse_date_time(meta_data.get("created", None))
-        except ValueError as e:
-            info_data["created"] = None
-            info_data["info"] = "Failed to parse creation time stamp"
-            info_data["state"] = MetaData.FAILED
+            # The parsing of the creation date is somewhat complicated and has the potential to fail
+            try:
+                info_data["created"] = self.parse_date_time(meta_data.get("created", None))
+            except ValueError as e:
+                info_data["created"] = None
+                info_data["info"] = "Failed to parse creation time stamp"
+                info_data["state"] = MetaData.FAILED
 
         return NoteInfo(**info_data)
 
@@ -216,7 +216,3 @@ def _extract_yaml_front_matter(content: str) -> Tuple[MetaData, Optional[Dict], 
         return MetaData.UNKNOWN, parsed, normal_content
     except:
         return MetaData.FAILED, None, content
-
-
-
-
