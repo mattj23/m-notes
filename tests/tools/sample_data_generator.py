@@ -224,13 +224,28 @@ def render_note(data: Dict) -> str:
 
 if __name__ == '__main__':
     backing = {}
-    for i in range(5):
+    for i in range(3):
         note = random_note()
         created: DateTime = note['created']
-        backing[f"/home/note-{i:02d}.md"] = {
+        backing[f"/alpha/note-{i:02d}.md"] = {
             "content": render_note(note),
             "modified": int(created.timestamp())
         }
-    from pprint import pprint
-    pprint(backing)
-    print(backing)
+
+    special = {
+        "missing-author": remove_author(random_note()),
+        "missing-created": remove_id(remove_created(random_note())),
+        "missing-id": remove_id(random_note()),
+        "missing-title": remove_title(random_note())
+    }
+
+    for k, note in special.items():
+        created: DateTime = note["created"] if note["created"] else random_note()["created"]
+        backing[f"/alpha/{k}.md"] = {"content": render_note(note), "modified": int(created.timestamp())}
+
+    print("DATA_SET_NAME = {")
+    for k, v in backing.items():
+        print(f"'{k}': {v}")
+    print("}")
+
+

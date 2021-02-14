@@ -2,6 +2,7 @@
     Provides encapsulation of the filesystem to allow for testing.
 
 """
+from __future__ import annotations
 
 import os
 import abc
@@ -28,6 +29,26 @@ class FileInfo:
 
     def to_dict(self) -> Dict:
         return asdict(self)
+
+    def has_changed_from(self, other: FileInfo, use_checksum: bool = False) -> bool:
+        """
+        Try to determine if this FileInfo object has changed from another FileInfo object with the same path, used to
+        see if a file has likely changed since an earlier FileInfo object was captured from it.
+
+        If `use_checksum` is true, it will perform the comparison on the checksums. Be aware that if either of the two
+        checksums has **not** been calculated and is `None` the comparison will always result in `True` as a safety
+        measure.  If `use_checksum` is `False`, the comparison will return `True` if *either* the file size or the last
+        modified time has changed (like with rsync)
+        :param other: the other
+        :param use_checksum:
+        :return:
+        """
+        if other.full_path != self.full_path:
+            raise ValueError("Do not attempt a comparison between two FileInfo objects that don't have the same path!")
+
+        if use_checksum:
+            return self.check_sum != other.check_sum
+        return self.last_modified != other.last_modified or self.last_modified != other.last_modified
 
 
 class FileSystemProvider(abc.ABC):
