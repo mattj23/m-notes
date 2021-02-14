@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import json
 from typing import List, Dict
@@ -6,6 +8,7 @@ from dataclasses import dataclass
 from mnotes.utility.file_system import FileInfo, FileSystemProvider
 
 from .markdown_notes import NoteInfo, NoteBuilder
+from ..utility.json_encoder import MNotesEncoder, MNotesDecoder
 
 
 @dataclass
@@ -23,7 +26,7 @@ class NoteIndex:
         self.files: Dict[str, FileInfo] = {}
         self.notes: Dict[str, NoteInfo] = {}
         self.exceptions: List[IndexOperationResult] = []
-        self.is_merged: bool = False    # Has this index been merged into the global index?
+        self.is_merged: bool = False  # Has this index been merged into the global index?
 
         for file_dict in kwargs.get("files", []):
             info = FileInfo(**file_dict)
@@ -31,6 +34,7 @@ class NoteIndex:
 
         for note_dict in kwargs.get("notes", []):
             note = NoteInfo(**note_dict)
+            self.notes[note.file_path] = note
 
     def serialize(self) -> str:
         output = {
@@ -39,7 +43,12 @@ class NoteIndex:
             "files": [f.to_dict() for f in self.files.values()],
             "notes": [n.to_dict() for n in self.notes.values()]
         }
-        return json.dumps(output, indent=4)
+        return json.dumps(output, indent=4, cls=MNotesEncoder)
+
+    @staticmethod
+    def deserialize(encoded: str) -> NoteIndex:
+        dict_data = json.loads(encoded, cls=MNotesDecoder)
+        return NoteIndex(**dict_data)
 
 
 class IndexBuilder:

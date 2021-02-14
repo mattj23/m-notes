@@ -223,7 +223,14 @@ def render_note(data: Dict) -> str:
 
 
 if __name__ == '__main__':
-    note = random_note()
-    print(note)
-    print()
-    print(render_note(note))
+    backing = {}
+    for i in range(5):
+        note = random_note()
+        created: DateTime = note['created']
+        backing[f"/home/note-{i:02d}.md"] = {
+            "content": render_note(note),
+            "modified": int(created.timestamp())
+        }
+    from pprint import pprint
+    pprint(backing)
+    print(backing)
