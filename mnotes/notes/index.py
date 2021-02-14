@@ -14,6 +14,7 @@ class IndexOperationResult:
     note: FileInfo
     error: Exception
 
+
 @dataclass
 class IndexConflict:
     id: str
@@ -174,14 +175,6 @@ class GlobalIndices:
 
         return new_conflicts
 
-
-
-
-
-
-
-
-
     def load_all(self, force_checksum: bool = False):
         """
         Load all indices globally. This will attempt to start from pre-loaded indices which only need to be
@@ -228,5 +221,3 @@ class GlobalIndices:
 
         for id_, note in self.by_id.items():
             note.state = MetaData.OK
-
-

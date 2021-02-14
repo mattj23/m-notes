@@ -6,7 +6,7 @@ import sys
 import time
 
 import click
-from mnotes.environment import MnoteEnvironment, pass_env, echo_line
+from mnotes.environment import MnoteEnvironment, pass_env, echo_line, save_global_index_data
 
 valid_chars_pattern = re.compile(r"[^a-z0-9\-]")
 
@@ -80,7 +80,22 @@ def create(env: MnoteEnvironment, name: str):
                   "are adding to the global directory.")
 
     # Check for conflicts before allowing M-Notes to add this as an index
+    conflicts = env.global_index.find_conflicts(env.cwd)
+    if conflicts:
+        echo_line(style.fail("There are ID conflicts which would be created if this folder is merged into the global"
+                             "directory as it is."))
+        for id_, conflict in conflicts.items():
+            click.echo()
+            echo_line(style.warning(f"Conflict for ID {id_}:", bold=True))
+            for e in conflict.existing:
+                echo_line(style.visible(f" * Already in global: {e.file_path}"))
 
+            for c in conflict.conflicting:
+                echo_line(style.warning(f" * In this directory: {c.file_path}"))
 
+        return
 
+    # If we got to this point we can create the index!
+    env.global_index.index_directory[name] = {"path": env.cwd}
+    save_global_index_data(env.global_index)
 

@@ -94,7 +94,7 @@ class Config:
 
 class MnoteEnvironment:
     def __init__(self, config: Config, global_index: GlobalIndices):
-        self.cwd = os.getcwd()
+        self.cwd = os.path.abspath(os.getcwd())
         self.config: Config = config
         self.global_index: GlobalIndices = global_index
 
@@ -158,6 +158,22 @@ def load_global_index_data() -> GlobalIndexData:
                 cached[name] = NoteIndex.deserialize(handle.read())
 
     return GlobalIndexData(directory=directory, cached_indices=cached)
+
+
+def save_global_index_data(master: GlobalIndices):
+    config_root = click.get_app_dir(APPLICATION_NAME)
+    global_index_file = os.path.join(config_root, GLOBAL_INDEX_FILE)
+
+    if os.path.exists(global_index_file):
+        shutil.copy(global_index_file, global_index_file + ".back")
+
+    with open(global_index_file, "w") as handle:
+        yaml.dump(master.index_directory, handle)
+
+    for name, index in master.indices.items():
+        cache_file = os.path.join(config_root, f"index-{name}.cached.json")
+        with open(cache_file, "w") as handle:
+            handle.write(index.serialize())
 
 
 def load_config():
