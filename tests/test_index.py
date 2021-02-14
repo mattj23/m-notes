@@ -223,4 +223,31 @@ def test_global_detects_new_only_conflicts(conflict_data):
     assert sorted(f"/bravo/conflict-{i:02d}.md" for i in (0, 1)) == sorted(x.file_path for x in c.conflicting)
 
 
+def test_global_does_not_detect_null_as_conflict(conflict_data):
+    provider, index_builder = conflict_data
+    directory = {
+        "echo": {"path": "/echo"},
+    }
+    del provider.internal["/delta/conflict.md"]
+    master = GlobalIndices(index_builder, directory=directory)
+    master.load_all()
+
+    assert len(master.conflicts) == 0
+
+
+def test_global_does_not_detect_null_as_new_conflict(conflict_data):
+    provider, index_builder = conflict_data
+    directory = {
+        "delta": {"path": "/delta"},
+    }
+    del provider.internal["/delta/conflict.md"]
+    master = GlobalIndices(index_builder, directory=directory)
+    master.load_all()
+
+    conflicts = master.find_conflicts("/echo")
+
+    assert len(conflicts) == 0
+
+
+
 

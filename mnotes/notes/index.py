@@ -145,19 +145,24 @@ class GlobalIndices:
 
         valid_ids: Dict[str, NoteInfo] = {}
         for note in check_index.notes.values():
-            # Check against
+            if note.id is None:
+                continue
+
+            # Check against existing, valid IDs in the global index
             if note.id in self.by_id:
                 if note.id in new_conflicts:
                     new_conflicts[note.id].conflicting.append(note)
                 else:
                     new_conflicts[note.id] = IndexConflict(note.id, [self.by_id[note.id]], [note])
 
+            # Check against conflicts that already exist in the global index
             elif note.id in self.conflicts:
                 if note.id in new_conflicts:
                     new_conflicts[note.id].conflicting.append(note)
                 else:
                     new_conflicts[note.id] = IndexConflict(note.id, self.conflicts[note.id], [note])
 
+            # Check against conflicts that are entirely within the new directory itself
             elif note.id in valid_ids:
                 if note.id in new_conflicts:
                     new_conflicts[note.id].conflicting.append(note)

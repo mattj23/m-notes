@@ -225,21 +225,31 @@ def render_note(data: Dict) -> str:
 if __name__ == '__main__':
 
     backing = {}
-    for folder in ["bravo", "charlie", "delta"]:
-        for i in range(3):
-            note = random_note()
-            created: DateTime = note['created']
-            backing[f"/{folder}/note-{i:02d}.md"] = {
-                "content": render_note(note),
-                "modified": int(created.timestamp())
-            }
+    # for folder in ["bravo", "charlie", "delta"]:
+    #     for i in range(3):
+    #         note = random_note()
+    #         created: DateTime = note['created']
+    #         backing[f"/{folder}/note-{i:02d}.md"] = {
+    #             "content": render_note(note),
+    #             "modified": int(created.timestamp())
+    #         }
+    #
+    # conflicts = conflicting_ids(4)
+    # paths = ["/bravo/conflict-00.md", "/bravo/conflict-01.md", "/charlie/conflict.md", "/delta/conflict.md"]
+    # for path, note in zip(paths, conflicts):
+    #     backing[path] = {
+    #         "content": render_note(note),
+    #         "modified": int(note['created'].timestamp())
+    #     }
+    #
+    for i in range(3):
+        note = random_note()
+        created: DateTime = note['created']
+        note = remove_id(note)
 
-    conflicts = conflicting_ids(4)
-    paths = ["/bravo/conflict-00.md", "/bravo/conflict-01.md", "/charlie/conflict.md", "/delta/conflict.md"]
-    for path, note in zip(paths, conflicts):
-        backing[path] = {
+        backing[f"/echo/note-{i:02d}.md"] = {
             "content": render_note(note),
-            "modified": int(note['created'].timestamp())
+            "modified": int(created.timestamp())
         }
 
     print("DATA_SET_NAME = {")
