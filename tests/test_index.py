@@ -174,5 +174,53 @@ def test_global_index_detects_conflicts(conflict_data):
     assert all(n.state == MetaData.OK for n in master.by_id.values())
 
 
+def test_global_detects_simple_conflicts(conflict_data):
+    provider, index_builder = conflict_data
+    directory = {
+        "charlie": {"path": "/charlie"},
+    }
+    master = GlobalIndices(index_builder, directory=directory)
+    master.load_all()
+
+    conflicts = master.find_conflicts("/delta")
+
+    assert ["20071116151627"] == list(conflicts.keys())
+    c = conflicts["20071116151627"]
+    assert ["/charlie/conflict.md"] == sorted(x.file_path for x in c.existing)
+    assert ["/delta/conflict.md"] == sorted(x.file_path for x in c.conflicting)
+
+
+def test_global_detects_existing_conflicts(conflict_data):
+    provider, index_builder = conflict_data
+    directory = {
+        "bravo": {"path": "/bravo"},
+    }
+    master = GlobalIndices(index_builder, directory=directory)
+    master.load_all()
+
+    conflicts = master.find_conflicts("/delta")
+
+    assert ["20071116151627"] == list(conflicts.keys())
+    c = conflicts["20071116151627"]
+    assert sorted(f"/bravo/conflict-{i:02d}.md" for i in (0, 1)) == sorted(x.file_path for x in c.existing)
+    assert ["/delta/conflict.md"] == sorted(x.file_path for x in c.conflicting)
+
+
+def test_global_detects_new_only_conflicts(conflict_data):
+    provider, index_builder = conflict_data
+    directory = {
+        "delta": {"path": "/delta"},
+    }
+    del provider.internal["/delta/conflict.md"]
+    master = GlobalIndices(index_builder, directory=directory)
+    master.load_all()
+
+    conflicts = master.find_conflicts("/bravo")
+
+    assert ["20071116151627"] == list(conflicts.keys())
+    c = conflicts["20071116151627"]
+    assert not c.existing
+    assert sorted(f"/bravo/conflict-{i:02d}.md" for i in (0, 1)) == sorted(x.file_path for x in c.conflicting)
+
 
 

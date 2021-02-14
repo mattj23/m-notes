@@ -14,6 +14,12 @@ class IndexOperationResult:
     note: FileInfo
     error: Exception
 
+@dataclass
+class IndexConflict:
+    id: str
+    existing: List[NoteInfo]
+    conflicting: List[NoteInfo]
+
 
 class NoteIndex:
 
@@ -129,6 +135,52 @@ class GlobalIndices:
         self.index_directory: Dict[str, Dict] = kwargs.get("directory", {})
         self.indices: Dict[str, NoteIndex] = {}
         self.conflicts: Dict[str, List[NoteInfo]] = {}
+
+    def find_conflicts(self, path: str) -> Dict[str, IndexConflict]:
+        """ Detect conflicts between the existing global index and the contents of a new directory """
+        # Make sure to detect conflicts both in the by_id dictionary *and* the conflicts dictionary
+        check_index = self.index_builder.create("!", path)
+        new_conflicts: Dict[str, IndexConflict] = {}
+
+        valid_ids: Dict[str, NoteInfo] = {}
+        for note in check_index.notes.values():
+            # Check against
+            if note.id in self.by_id:
+                if note.id in new_conflicts:
+                    new_conflicts[note.id].conflicting.append(note)
+                else:
+                    new_conflicts[note.id] = IndexConflict(note.id, [self.by_id[note.id]], [note])
+
+            elif note.id in self.conflicts:
+                if note.id in new_conflicts:
+                    new_conflicts[note.id].conflicting.append(note)
+                else:
+                    new_conflicts[note.id] = IndexConflict(note.id, self.conflicts[note.id], [note])
+
+            elif note.id in valid_ids:
+                if note.id in new_conflicts:
+                    new_conflicts[note.id].conflicting.append(note)
+                else:
+                    new_conflicts[note.id] = IndexConflict(note.id, [], [note])
+
+            else:
+                valid_ids[note.id] = note
+
+        # Now sweep over the valid_id's to check if the third case occurred at any point
+        for k, v in new_conflicts.items():
+            if k in valid_ids:
+                v.conflicting.append(valid_ids[k])
+                del valid_ids[k]
+
+        return new_conflicts
+
+
+
+
+
+
+
+
 
     def load_all(self, force_checksum: bool = False):
         """
