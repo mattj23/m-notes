@@ -73,6 +73,7 @@ class IndexBuilder:
         # Now we need to load all of the actual note metadata
         for file_path, file_info in index.files.items():
             try:
+                index.files[file_path].check_sum = self.provider.checksum(file_path)
                 index.notes[file_path] = self.note_builder.load_info(file_path)
             except Exception as e:
                 index.exceptions[file_path] = IndexOperationResult(file_info, e)
@@ -88,6 +89,10 @@ class IndexBuilder:
         """
         raw_witnessed: List[FileInfo] = self.provider.get_all(index.path, self._markdown_filter)
         witnessed: Dict[str, FileInfo] = {w.full_path: w for w in raw_witnessed}
+
+        if force_checksums:
+            for w in witnessed.values():
+                w.check_sum = self.provider.checksum(w.full_path)
 
         # Determine items in the index that are no longer present in the witnessed information
         to_remove = []

@@ -118,8 +118,11 @@ class NoteBuilder:
             info_data["info"] = "File missing metadata"
             meta_data = {}
         else:
+            id_ = meta_data.get("id", None)
+            if id_ is not None:
+                id_ = str(id_)
             info_data.update({
-                "id": meta_data.get("id", None),
+                "id": id_,
                 "title": meta_data.get("title", None),
                 "author": meta_data.get("author", None),
             })

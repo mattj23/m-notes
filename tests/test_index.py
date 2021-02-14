@@ -74,18 +74,62 @@ def test_index_detect_files_added(five_normal_notes):
 
     assert sorted(f"/home/note-{i:02d}.md" for i in range(6)) == sorted(n.file_path for n in index.notes.values())
     assert sorted(f"/home/note-{i:02d}.md" for i in range(6)) == sorted(f.full_path for f in index.files.values())
+    assert index.notes["/home/note-05.md"].author == "Robert Robertson"
+    assert index.notes["/home/note-05.md"].id == "20210213160525"
 
 
-def test_index_detect_files_changed_checksums():
-    assert False
+def test_index_detect_files_changed_checksums(five_normal_notes):
+    provider, index_builder = five_normal_notes
+    index = index_builder.create("test", "/")
+
+    # Change one letter in the author's name but nothing in the time or size and update the index
+    text: str = provider.internal["/home/note-00.md"]["content"]
+    provider.internal["/home/note-00.md"]["content"] = text.replace("Eva Evanston", "Eve Evanston")
+    index_builder.update(index, True)
+
+    assert "Eve Evanston" == index.notes["/home/note-00.md"].author
 
 
-def test_index_detect_files_changed_rsync_method():
-    assert False
+def test_index_detect_files_changed_size(five_normal_notes):
+    provider, index_builder = five_normal_notes
+    index = index_builder.create("test", "/")
+
+    # Change one letter in the author's name and update the index
+    text: str = provider.internal["/home/note-00.md"]["content"]
+    provider.internal["/home/note-00.md"]["content"] = text.replace("Eva Evanston", "Evan Evanston")
+    index_builder.update(index)
+
+    assert "Evan Evanston" == index.notes["/home/note-00.md"].author
 
 
-def test_index_detect_all_changes():
-    assert False
+def test_index_detect_files_changed_timestamp(five_normal_notes):
+    provider, index_builder = five_normal_notes
+    index = index_builder.create("test", "/")
+
+    # Change one letter in the author's name and update the index
+    text: str = provider.internal["/home/note-00.md"]["content"]
+    provider.internal["/home/note-00.md"]["content"] = text.replace("Eva Evanston", "Eve Evanston")
+    provider.internal["/home/note-00.md"]["modified"] += 1
+    index_builder.update(index)
+
+    assert "Eve Evanston" == index.notes["/home/note-00.md"].author
+
+
+def test_index_detect_all_changes(five_normal_notes):
+    provider, index_builder = five_normal_notes
+    index = index_builder.create("test", "/")
+    del provider.internal["/home/note-00.md"]
+    provider.internal["/home/note-05.md"] = {
+        "content": sample.MD_SAMPLE_NOTE_0,
+        "modified": 10
+    }
+    text = provider.internal["/home/note-01.md"]["content"]
+    provider.internal["/home/note-01.md"]["content"] = text.replace("title: In magna etiam",
+                                                                    "title: I edited this")
+    index_builder.update(index)
+    assert "I edited this" == index.notes["/home/note-01.md"].title
+    assert sorted(f"/home/note-{i:02d}.md" for i in range(1, 6)) == sorted(n.file_path for n in index.notes.values())
+    assert sorted(f"/home/note-{i:02d}.md" for i in range(1, 6)) == sorted(f.full_path for f in index.files.values())
 
 
 def test_global_build_index(dual_folders):

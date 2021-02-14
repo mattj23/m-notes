@@ -47,8 +47,8 @@ class FileInfo:
             raise ValueError("Do not attempt a comparison between two FileInfo objects that don't have the same path!")
 
         if use_checksum:
-            return self.check_sum != other.check_sum
-        return self.last_modified != other.last_modified or self.last_modified != other.last_modified
+            return self.check_sum != other.check_sum or self.check_sum is None or other.check_sum is None
+        return self.last_modified != other.last_modified or self.size != other.size
 
 
 class FileSystemProvider(abc.ABC):
