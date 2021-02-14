@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import List, Dict, Set
+from typing import List, Dict, Set, Callable
 from dataclasses import dataclass
 from mnotes.utility.file_system import FileInfo, FileSystemProvider
 
@@ -137,6 +137,9 @@ class GlobalIndices:
         self.indices: Dict[str, NoteIndex] = {}
         self.conflicts: Dict[str, List[NoteInfo]] = {}
 
+        # Callback to run after loading has finished
+        self.on_load: Callable[[GlobalIndices], None] = kwargs.get("on_load", None)
+
     def find_conflicts(self, path: str) -> Dict[str, IndexConflict]:
         """ Detect conflicts between the existing global index and the contents of a new directory """
         # Make sure to detect conflicts both in the by_id dictionary *and* the conflicts dictionary
@@ -226,3 +229,6 @@ class GlobalIndices:
 
         for id_, note in self.by_id.items():
             note.state = MetaData.OK
+
+        if self.on_load is not None:
+            self.on_load(self)

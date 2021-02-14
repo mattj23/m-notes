@@ -6,7 +6,7 @@ from typing import List, Optional
 from mnotes.utility.file_system import FileSystem
 from mnotes.notes.markdown_notes import NoteBuilder
 from mnotes.notes.index import IndexBuilder, GlobalIndices
-from mnotes.environment import MnoteEnvironment, load_config, load_global_index_data
+from mnotes.environment import MnoteEnvironment, load_config, load_global_index_data, save_global_index_data
 import mnotes.fix
 import mnotes.cmd_config
 import mnotes.cmd_index
@@ -30,8 +30,10 @@ def main(ctx: click.core.Context):
     provider = FileSystem()
     note_builder = NoteBuilder(provider, tzlocal())
     index_builder = IndexBuilder(provider, note_builder)
-    global_index = GlobalIndices(index_builder, directory=global_data.directory,
-                                 cached=global_data.cached_indices)
+    global_index = GlobalIndices(index_builder,
+                                 directory=global_data.directory,
+                                 cached=global_data.cached_indices,
+                                 on_load=save_global_index_data)
 
     ctx.obj = MnoteEnvironment(config, global_index)
     ctx.obj.print()

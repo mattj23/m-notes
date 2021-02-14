@@ -10,12 +10,15 @@ from mnotes.environment import MnoteEnvironment, pass_env, echo_line, save_globa
 
 valid_chars_pattern = re.compile(r"[^a-z0-9\-]")
 
+
 @click.group(name="index", invoke_without_command=True)
 @click.pass_context
 @pass_env
 def main(env: MnoteEnvironment, ctx: click.core.Context):
     """ Manage M-Notes' global directory of indices. Indices represent folders containing indexed notes."""
     style = env.config.styles
+    env.global_index.load_all()
+
     echo_line(" * index mode")
     if len(env.global_index.indices) == 0 and ctx.invoked_subcommand != "create":
         echo_line(" * there are ", style.warning("no indices"), " in the global directory")
@@ -24,14 +27,15 @@ def main(env: MnoteEnvironment, ctx: click.core.Context):
         sys.exit()
 
     else:
-        echo_line(" * there are ", style.visible(f"{len(env.global_index.indices)}"), " indices in the global directory")
+        echo_line(" * there are ", style.visible(f"{len(env.global_index.indices)}"),
+                  " indices in the global directory")
 
     if ctx.invoked_subcommand is None:
         # Update the global index
         start_time = time.time()
         env.global_index.load_all()
         end_time = time.time()
-        click.echo(style.success(f" * updated all indices, took {end_time - start_time:0.4f} seconds"))
+        click.echo(style.success(f" * updated all indices, took {end_time - start_time:0.2f} seconds"))
 
         click.echo()
         echo_line(click.style("Current Indices in Global Directory:", bold=True))
@@ -98,4 +102,3 @@ def create(env: MnoteEnvironment, name: str):
     # If we got to this point we can create the index!
     env.global_index.index_directory[name] = {"path": env.cwd}
     save_global_index_data(env.global_index)
-
