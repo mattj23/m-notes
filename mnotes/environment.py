@@ -7,6 +7,7 @@ from typing import Optional, Dict, Tuple, List
 
 APPLICATION_NAME = "m-notes"
 CONFIG_FILE = "m-notes.yaml"
+ID_TIME_FORMAT = "%Y%m%d%H%M%S"
 
 
 class Style:

@@ -7,7 +7,6 @@ from datetime import datetime as DateTime
 from typing import Tuple
 
 long_stamp_pattern = re.compile(r"20\d{12}")
-long_stamp_format = "%Y%m%d%H%M%S"
 
 
 note_checks = {
