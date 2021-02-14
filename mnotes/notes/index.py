@@ -64,20 +64,7 @@ class IndexBuilder:
 
     def create(self, name: str, path: str) -> NoteIndex:
         index = NoteIndex(name=name, path=path)
-
-        # Load all of the file information objects in the directory
-        files = self.provider.get_all(path, self._markdown_filter)
-        for file_info in files:
-            index.files[file_info.full_path] = file_info
-
-        # Now we need to load all of the actual note metadata
-        for file_path, file_info in index.files.items():
-            try:
-                index.files[file_path].check_sum = self.provider.checksum(file_path)
-                index.notes[file_path] = self.note_builder.load_info(file_path)
-            except Exception as e:
-                index.exceptions[file_path] = IndexOperationResult(file_info, e)
-
+        self.update(index, True)
         return index
 
     def update(self, index: NoteIndex, force_checksums: bool = False):
