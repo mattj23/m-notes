@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-import os
 import json
-from typing import List, Dict
-from datetime import tzinfo
+from typing import List, Dict, Set
 from dataclasses import dataclass
 from mnotes.utility.file_system import FileInfo, FileSystemProvider
 
-from .markdown_notes import NoteInfo, NoteBuilder
+from .markdown_notes import NoteInfo, NoteBuilder, MetaData
 from ..utility.json_encoder import MNotesEncoder, MNotesDecoder
 
 
@@ -122,13 +120,59 @@ class GlobalIndices:
 
     def __init__(self, index_builder: IndexBuilder, **kwargs):
         self.index_builder = index_builder
-        self.by_id = {}
+        self.by_id: Dict[str, NoteInfo] = {}
+        self.all_ids: Set[str] = set()
+
+        # The cached field is for indices which were deserialized, and simply need to be updated
+        self.cached: Dict[str, NoteIndex] = kwargs.get("cached", {})
 
         self.index_directory: Dict[str, Dict] = kwargs.get("directory", {})
         self.indices: Dict[str, NoteIndex] = {}
+        self.conflicts: Dict[str, List[NoteInfo]] = {}
 
-    def load_all(self):
+    def load_all(self, force_checksum: bool = False):
+        """
+        Load all indices globally. This will attempt to start from pre-loaded indices which only need to be
+        updated, as the update operation is a lot less intense than the new creation operation.
+
+        After the indices are loaded the unique ids will be merged and conflicts detected.
+        :param force_checksum: force the use of checksum for the update operation
+        """
+        # Update all of the indices
         for name, info in self.index_directory.items():
-            index = self.index_builder.create(name, info["path"])
+            index = self.cached.get(name, None)
+            if index is None:
+                index = self.index_builder.create(name, info["path"])
 
-            # The index must be merged in with the global set in order to detect ID conflicts.
+            self.index_builder.update(index, force_checksum)
+
+            self.indices[name] = index
+
+            # Go through each note and detect any conflicts against the global ID registry, and if there are none add
+            # the note to the unified id dictionary.  If there is a conflict we'll add this note to the conflict
+            # dictionary, but we will not remove the conflicting note yet, as this would prevent further conflicts
+            # from being detected. Instead we'll handle the original conflict after all of the indices have been
+            # merged.
+            for note in self.indices[name].notes.values():
+                if note.id is not None:
+                    self.all_ids.add(note.id)
+                    if note.id in self.by_id:
+                        self.conflicts[note.id].append(note)
+                    else:
+                        self.by_id[note.id] = note
+                else:
+                    note.state = MetaData.NO_ID
+
+        # Now that we're done merging all indices we'll go through all of the conflicts and remove the original note
+        # which was first merged into the global dictionary, since it was added based on the happenstance of what
+        # order things occurred in, and is not actually privileged over the other notes.
+        for id_, conflict_list in self.conflicts.items():
+            conflict_list.append(self.by_id[id_])
+            del self.by_id[id_]
+            for note in conflict_list:
+                note.state = MetaData.CONFLICT
+
+        for id_, note in self.by_id.items():
+            note.state = MetaData.OK
+
+
