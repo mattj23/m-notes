@@ -3,10 +3,13 @@ import shutil
 
 import click
 import yaml
+from dataclasses import dataclass
 from typing import Optional, Dict, Tuple, List
+from mnotes.notes.index import GlobalIndices, NoteIndex
 
 APPLICATION_NAME = "m-notes"
 CONFIG_FILE = "m-notes.yaml"
+GLOBAL_INDEX_FILE = "global-indices.yaml"
 ID_TIME_FORMAT = "%Y%m%d%H%M%S"
 
 
@@ -59,7 +62,7 @@ class Styles:
             ("fail", "Style for text that shows when an operation has failed", self.fail),
             ("success", "Style for text that shows a success condition", self.success),
             ("visible", "Style for text that should be visible or highlighted in a way that draws attention to it, but"
-             " is not necessarily good or bad", self.visible),
+                        " is not necessarily good or bad", self.visible),
         ]
 
     def to_serializable(self):
@@ -90,9 +93,10 @@ class Config:
 
 
 class MnoteEnvironment:
-    def __init__(self):
+    def __init__(self, config: Config, global_index: GlobalIndices):
         self.cwd = os.getcwd()
-        self.config: Config = load_config()
+        self.config: Config = config
+        self.global_index: GlobalIndices = global_index
 
     def print(self):
         click.echo(f" * current directory: {self.cwd}")
@@ -107,28 +111,57 @@ def echo_line(*args: str):
     click.echo(args[-1])
 
 
+@dataclass
+class GlobalIndexData:
+    directory: Dict[str, Dict]
+    cached_indices: Dict[str, NoteIndex]
+
+
+def load_global_index_data() -> GlobalIndexData:
+    config_root = click.get_app_dir(APPLICATION_NAME)
+    global_index_file = os.path.join(config_root, GLOBAL_INDEX_FILE)
+
+    if not os.path.exists(global_index_file):
+        return GlobalIndexData(directory={}, cached_indices={})
+
+    # TODO: add check for corrupted file here
+    with open(global_index_file, "r") as handle:
+        directory = yaml.safe_load(handle)
+
+    cached = {}
+    for name, info in directory.items():
+        cache_file = os.path.join(config_root, f"index-{name}.cached.json")
+        if os.path.exists(cache_file):
+            with open(cache_file, "r") as handle:
+                cached[name] = NoteIndex.deserialize(handle.read())
+
+    return GlobalIndexData(directory=directory, cached_indices=cached)
+
+
 def load_config():
     config_root = click.get_app_dir(APPLICATION_NAME)
     config_file = os.path.join(config_root, CONFIG_FILE)
 
+    # Enforce the presence of the configuration directory
     if not os.path.exists(config_root):
         click.echo(click.style(f" * creating config directory {config_root}", fg="blue"))
         os.makedirs(config_root)
 
+    # Enforce the presence of the configuration file, creating it if it does not exist
     if not os.path.exists(config_file):
         click.echo(click.style(f" * creating config file {config_file}", fg="blue"))
+        config = Config(file=config_file)
+        config.write()
 
-        default = {
-            "author": None
-        }
-
-        with open(config_file, "w") as handle:
-            yaml.dump(default, handle)
-
+    # Load the configuration file
     with open(config_file, "r") as handle:
-        config_dictionary = yaml.safe_load(handle)
+        try:
+            config_dictionary = yaml.safe_load(handle)
+        except:
+            click.echo(click.style(f"The M-Notes configuration file {config_file} appears to be corrupted or can't be "
+                                   f"parsed. Check the file or revert to a previously known good version.",
+                                   bold=True, fg="bright_red"))
+            raise
     config_dictionary["file"] = config_file
 
     return Config(**config_dictionary)
-
-
