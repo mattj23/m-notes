@@ -101,6 +101,19 @@ class MnoteEnvironment:
     def print(self):
         click.echo(f" * current directory: {self.cwd}")
 
+    @property
+    def index_of_cwd(self) -> Optional[NoteIndex]:
+        """ Look at the current working directory and determine what index we're inside """
+        # TODO: can this be cached? it shouldn't change once the program starts
+        return self.get_index_of_path(self.cwd)
+
+    def get_index_of_path(self, path: str) -> Optional[NoteIndex]:
+        check_abs = os.path.abspath(path)
+        for index in self.global_index.indices.values():
+            if check_abs.startswith(os.path.abspath(index.path)):
+                return index
+        return None
+
 
 pass_env = click.make_pass_decorator(MnoteEnvironment, ensure=True)
 
