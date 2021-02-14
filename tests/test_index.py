@@ -4,7 +4,7 @@ from dateutil import tz
 import tests.tools.sample_data as sample
 from tests.tools.file_system_mocks import TestFileSystemProvider
 
-from mnotes.notes.markdown_notes import NoteBuilder
+from mnotes.notes.markdown_notes import NoteBuilder, MetaData
 from mnotes.notes.index import IndexBuilder, NoteIndex, GlobalIndices
 
 local_tz = tz.gettz("Africa/Harare")
@@ -24,6 +24,14 @@ def dual_folders():
     d2 = deepcopy(sample.INDEX_WITH_MISSING_ATTRS)
     d1.update(d2)
     provider = TestFileSystemProvider(d1)
+    note_builder = NoteBuilder(provider, local_tz)
+    index_builder = IndexBuilder(provider, note_builder)
+    return provider, index_builder
+
+
+@pytest.fixture
+def conflict_data():
+    provider = TestFileSystemProvider(deepcopy(sample.INDEX_WITH_CONFLICTS))
     note_builder = NoteBuilder(provider, local_tz)
     index_builder = IndexBuilder(provider, note_builder)
     return provider, index_builder
@@ -142,6 +150,29 @@ def test_global_build_index(dual_folders):
 
     master = GlobalIndices(index_builder, directory=directory)
     master.load_all()
+
+    assert len(master.indices) == 2
+    assert len(master.by_id) == 10
+    assert all(n.state == MetaData.OK for n in master.by_id.values())
+    assert master.indices["alpha"].notes["/alpha/missing-id.md"].state == MetaData.NO_ID
+    assert master.indices["alpha"].notes["/alpha/missing-created.md"].state == MetaData.NO_ID
+
+
+def test_global_index_detects_conflicts(conflict_data):
+    provider, index_builder = conflict_data
+    directory = {
+        "bravo": {"path": "/bravo"},
+        "charlie": {"path": "/charlie"},
+        "delta": {"path": "/delta"}
+    }
+    master = GlobalIndices(index_builder, directory=directory)
+    master.load_all()
+
+    assert len(master.by_id) == 9
+    assert ["20071116151627"] == list(master.conflicts.keys())
+    assert all(n.state == MetaData.CONFLICT for n in master.conflicts["20071116151627"])
+    assert all(n.state == MetaData.OK for n in master.by_id.values())
+
 
 
 

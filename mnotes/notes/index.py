@@ -157,6 +157,8 @@ class GlobalIndices:
                 if note.id is not None:
                     self.all_ids.add(note.id)
                     if note.id in self.by_id:
+                        if note.id not in self.conflicts:
+                            self.conflicts[note.id] = []
                         self.conflicts[note.id].append(note)
                     else:
                         self.by_id[note.id] = note
