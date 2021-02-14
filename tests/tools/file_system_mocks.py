@@ -61,7 +61,7 @@ class TestFileSystemProvider(FileSystemProvider):
         return io.StringIO(self.internal[path]["content"])
 
     def checksum(self, path: str) -> str:
-        sha = hashlib.sha1(self.internal[path]["content"])
+        sha = hashlib.sha1(self.internal[path]["content"].encode())
         return sha.hexdigest()
 
 

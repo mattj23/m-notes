@@ -53,8 +53,38 @@ def test_index_serialize_round_trip(five_normal_notes):
     assert index.notes == loaded.notes
 
 
-def test_index_detect_changes():
-    """ Load file information from the file system and identify which notes need to be refreshed """
+def test_index_detect_files_removed(five_normal_notes):
+    provider, index_builder = five_normal_notes
+    index = index_builder.create("test", "/")
+    del provider.internal["/home/note-00.md"]
+    index_builder.update(index)
+
+    assert sorted(f"/home/note-{i:02d}.md" for i in range(1, 5)) == sorted(n.file_path for n in index.notes.values())
+    assert sorted(f"/home/note-{i:02d}.md" for i in range(1, 5)) == sorted(f.full_path for f in index.files.values())
+
+
+def test_index_detect_files_added(five_normal_notes):
+    provider, index_builder = five_normal_notes
+    index = index_builder.create("test", "/")
+    provider.internal["/home/note-05.md"] = {
+        "content": sample.MD_SAMPLE_NOTE_0,
+        "modified": 10
+    }
+    index_builder.update(index)
+
+    assert sorted(f"/home/note-{i:02d}.md" for i in range(6)) == sorted(n.file_path for n in index.notes.values())
+    assert sorted(f"/home/note-{i:02d}.md" for i in range(6)) == sorted(f.full_path for f in index.files.values())
+
+
+def test_index_detect_files_changed_checksums():
+    assert False
+
+
+def test_index_detect_files_changed_rsync_method():
+    assert False
+
+
+def test_index_detect_all_changes():
     assert False
 
 
