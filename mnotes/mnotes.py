@@ -8,7 +8,8 @@ from mnotes.notes.markdown_notes import NoteBuilder
 from mnotes.notes.index import IndexBuilder, GlobalIndices
 from mnotes.environment import MnoteEnvironment, load_config, load_global_index_data
 import mnotes.fix
-import mnotes.config
+import mnotes.cmd_config
+import mnotes.cmd_index
 
 
 mnote_version = pkg_resources.require("m-notes")[0].version
@@ -50,8 +51,9 @@ def mgo(ctx: click.core.Context, set_name: str):
     click.echo(f"{set_name}")
 
 
-main.add_command(mnotes.config.config)
+main.add_command(mnotes.cmd_config.config)
 main.add_command(mnotes.fix.mode)
+main.add_command(mnotes.cmd_index.main)
 
 
 

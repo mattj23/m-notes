@@ -107,6 +107,15 @@ class MnoteEnvironment:
         # TODO: can this be cached? it shouldn't change once the program starts
         return self.get_index_of_path(self.cwd)
 
+    @property
+    def indices_in_cwd(self) -> List[NoteIndex]:
+        contained = []
+        check_abs = os.path.abspath(self.cwd)
+        for index in self.global_index.indices.values():
+            if os.path.abspath(index.path).startswith(check_abs):
+                contained.append(index)
+        return contained
+
     def get_index_of_path(self, path: str) -> Optional[NoteIndex]:
         check_abs = os.path.abspath(path)
         for index in self.global_index.indices.values():
