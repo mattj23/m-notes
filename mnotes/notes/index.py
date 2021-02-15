@@ -189,6 +189,10 @@ class GlobalIndices:
 
         return new_conflicts
 
+    def has_id(self, check_id: str) -> bool:
+        """ Check if the ID exists anywhere in the global index, including in the current conflicts """
+        return check_id in self.by_id or check_id in self.conflicts
+
     def load_all(self, force_checksum: bool = False):
         """
         Load all indices globally. This will attempt to start from pre-loaded indices which only need to be

@@ -10,9 +10,9 @@ from mnotes.environment import MnoteEnvironment, pass_env, echo_line
 
 from .fix_created import fix_created
 from .fix_author import fix_author
-# from .fix_title import fix_title
+from .fix_title import fix_title
 # from .fix_filename import fix_filename
-# from .fix_ids import fix_id
+from .fix_ids import fix_id
 
 
 @click.group(name="fix", invoke_without_command=True)
@@ -67,6 +67,6 @@ def main(env: MnoteEnvironment, ctx: click.core.Context, n: int):
 
 main.add_command(fix_created)
 main.add_command(fix_author)
-# mode.add_command(fix_title)
-# mode.add_command(fix_filename)
-# mode.add_command(fix_id)
+main.add_command(fix_title)
+# main.add_command(fix_filename)
+main.add_command(fix_id)

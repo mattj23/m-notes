@@ -1,13 +1,13 @@
 """
     M-Notes development tools
 """
-from typing import List, Callable
+from typing import List, Callable, Dict
 
 import click
 import pkg_resources
 import random
 from .sample_data_generator import (render_note, random_note, remove_author, remove_title, remove_created, remove_id,
-                                    get_random_words, ALL_WORDS)
+                                    get_random_words, ALL_WORDS, conflicting_ids)
 
 mnote_version = pkg_resources.require("m-notes")[0].version
 
@@ -24,7 +24,8 @@ def main(ctx: click.core.Context):
 @click.option("--created", type=int, help="The number of samples with missing creation times to generate")
 @click.option("--ids", type=int, help="The number of samples with missing ids to generate")
 @click.option("--title", type=int, help="The number of samples with missing titles to generate")
-def sample(normal: int, author: int, created: int, ids: int, title: int):
+@click.option("--conflict", type=int, help="The number of samples with conflicting IDs to generate")
+def sample(normal: int, author: int, created: int, ids: int, title: int, conflict: int):
     """ Generate sample data in the current folder """
 
     if normal is not None:
@@ -42,13 +43,13 @@ def sample(normal: int, author: int, created: int, ids: int, title: int):
     if title is not None:
         gen_notes(title, [remove_title])
 
+    if conflict is not None:
+        notes = conflicting_ids(conflict)
+        save_notes(notes)
 
-def gen_notes(count: int, apply: List[Callable]):
-    for i in range(count):
-        note = random_note()
-        for c in apply:
-            note = c(note)
 
+def save_notes(notes: List[Dict]):
+    for note in notes:
         file_name_words = []
         for k in range(random.randint(5, 10)):
             file_name_words.append(random.choice(ALL_WORDS))
@@ -56,3 +57,14 @@ def gen_notes(count: int, apply: List[Callable]):
 
         with open(f"{file_name}.md", "w") as handle:
             handle.write(render_note(note))
+
+
+def gen_notes(count: int, apply: List[Callable]):
+    notes = []
+    for i in range(count):
+        note = random_note()
+        for c in apply:
+            note = c(note)
+        notes.append(note)
+
+    save_notes(notes)
