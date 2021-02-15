@@ -5,11 +5,10 @@
 import time
 import click
 import sys
-from mnotes.fix.common import check_for_missing_attr
 from mnotes.notes.checks import note_checks
 from mnotes.environment import MnoteEnvironment, pass_env, echo_line
 
-# from .fix_created import fix_created
+from .fix_created import fix_created
 from .fix_author import fix_author
 # from .fix_title import fix_title
 # from .fix_filename import fix_filename
@@ -66,7 +65,7 @@ def main(env: MnoteEnvironment, ctx: click.core.Context, n: int):
     echo_line(style.success(f"Took {end_time - start_time:0.2f} seconds"))
 
 
-# mode.add_command(fix_created)
+main.add_command(fix_created)
 main.add_command(fix_author)
 # mode.add_command(fix_title)
 # mode.add_command(fix_filename)

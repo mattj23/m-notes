@@ -1,6 +1,7 @@
 import os
 import click
 from mnotes.notes.markdown_notes import NoteInfo
+from mnotes.notes.index import NoteIndex
 from typing import Optional, Tuple, List, Set, Callable
 
 
@@ -11,9 +12,10 @@ def echo_problem_title(issue: str, note: NoteInfo):
     click.echo(f" * filename = {note.file_name}")
 
 
-def check_for_missing_attr(notes: List[NoteInfo], checker: Callable[[NoteInfo], bool]) -> List[NoteInfo]:
-    missing = []
-    for note in notes:
-        if checker(note):
-            missing.append(note)
-    return missing
+def load_working(index: NoteIndex, path: str, files: List) -> List[NoteInfo]:
+    if not files:
+        return index.notes_in_path(path)
+    else:
+        abs_paths = map(os.path.abspath, files)
+        return [index.notes[f] for f in abs_paths if f in index.notes]
+
