@@ -1,11 +1,13 @@
 """
     Fix missing title metadata
 """
+import os
+
 import click
 from typing import List, Optional
 
 from .common import echo_problem_title
-from mnotes.notes.markdown_notes import NoteMetadata, load_all_notes
+from mnotes.notes.markdown_notes import NoteInfo
 from mnotes.notes.checks import note_checks
 from mnotes.environment import MnoteEnvironment, pass_env, echo_line
 
@@ -16,10 +18,13 @@ from mnotes.environment import MnoteEnvironment, pass_env, echo_line
 @click.argument("files", nargs=-1, type=click.Path())
 @pass_env
 def fix_author(env: MnoteEnvironment, n: Optional[int], author: Optional[str], files: List):
+    index = env.index_of_cwd
+
     if not files:
-        working = load_all_notes(env.cwd)
+        working = index.notes_in_path(env.cwd)
     else:
-        working = [NoteMetadata(f) for f in files]
+        abs_paths = map(os.path.abspath, files)
+        working = [index.notes[f] for f in abs_paths if f in index.notes]
     if working is None:
         return
 
@@ -43,10 +48,11 @@ def fix_author(env: MnoteEnvironment, n: Optional[int], author: Optional[str], f
 
     if click.confirm(click.style(f"Apply these {len(changes)} changes?", bold=True)):
         click.echo(style.success("User accepted changes"))
-        for note, new_title in changes:
-            note_with_content = NoteMetadata(note.file_path, store_content=True)
-            note_with_content.author = new_title
-            note_with_content.save_file()
+        for note, author in changes:
+            note_with_content = env.note_builder.load_note(note.file_path)
+            note_with_content.info.author = author
+            with env.provider.write_file(note.file_path) as handle:
+                handle.write(note_with_content.to_file_text())
     else:
         click.echo(style.fail("User rejected changes"))
 

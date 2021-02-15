@@ -6,6 +6,8 @@ import yaml
 from dataclasses import dataclass
 from typing import Optional, Dict, Tuple, List
 from mnotes.notes.index import GlobalIndices, NoteIndex
+from mnotes.notes.markdown_notes import NoteBuilder
+from mnotes.utility.file_system import FileSystemProvider
 
 APPLICATION_NAME = "m-notes"
 CONFIG_FILE = "m-notes.yaml"
@@ -93,10 +95,13 @@ class Config:
 
 
 class MnoteEnvironment:
-    def __init__(self, config: Config, global_index: GlobalIndices):
+    def __init__(self, config: Config, global_index: GlobalIndices, note_builder: NoteBuilder,
+                 provider: FileSystemProvider):
         self.cwd = os.path.abspath(os.getcwd())
         self.config: Config = config
         self.global_index: GlobalIndices = global_index
+        self.note_builder: NoteBuilder = note_builder
+        self.provider: FileSystemProvider = provider
 
     def print(self):
         click.echo(f" * current directory: {self.cwd}")

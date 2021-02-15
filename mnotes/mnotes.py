@@ -35,7 +35,7 @@ def main(ctx: click.core.Context):
                                  cached=global_data.cached_indices,
                                  on_load=save_global_index_data)
 
-    ctx.obj = MnoteEnvironment(config, global_index)
+    ctx.obj = MnoteEnvironment(config, global_index, note_builder, provider)
     ctx.obj.print()
 
     if ctx.invoked_subcommand is None:

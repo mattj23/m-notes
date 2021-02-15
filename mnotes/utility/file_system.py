@@ -75,7 +75,7 @@ class FileSystem(FileSystemProvider):
         results = []
         for root, dirs, files in os.walk(path):
             for f in filter(predicate, files):
-                file_path = os.path.join(root, f)
+                file_path = os.path.abspath(os.path.join(root, f))
                 directory, file_name = os.path.split(file_path)
                 modified = os.path.getmtime(file_path)
                 size = os.path.getsize(file_path)
