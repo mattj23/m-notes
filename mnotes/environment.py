@@ -128,6 +128,10 @@ pass_env = click.make_pass_decorator(MnoteEnvironment, ensure=True)
 
 
 def echo_line(*args: str):
+    if not args:
+        click.echo()
+        return
+
     for chunk in args[:-1]:
         click.echo(chunk, nl=False)
     click.echo(args[-1])

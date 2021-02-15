@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from typing import List, Dict, Set, Callable
 from dataclasses import dataclass
 from mnotes.utility.file_system import FileInfo, FileSystemProvider
@@ -40,6 +41,11 @@ class NoteIndex:
         for note_dict in kwargs.get("notes", []):
             note = NoteInfo(**note_dict)
             self.notes[note.file_path] = note
+
+    def notes_in_path(self, path: str) -> List[NoteInfo]:
+        """ Search the NoteIndex for notes which are in or below a specific directory. """
+        check_path = os.path.abspath(path)
+        return [n for n in self.notes.values() if n.file_path.startswith(check_path)]
 
     def serialize(self) -> str:
         output = {

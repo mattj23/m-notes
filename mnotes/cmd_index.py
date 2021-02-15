@@ -43,6 +43,31 @@ def main(env: MnoteEnvironment, ctx: click.core.Context):
             echo_line(" * ", style.visible(index.name), f" ({len(index.notes)} notes): {index.path}")
 
 
+@main.command(name="delete")
+@click.argument("name", type=str)
+@pass_env
+def delete(env: MnoteEnvironment, name: str):
+    """ Delete an index from the global directory. """
+    style = env.config.styles
+    click.echo()
+
+    if name not in env.global_index.indices:
+        echo_line(style.fail(f"There is no index named '{name}' to remove!"))
+        return
+
+    # If we got to this point we can create the index!
+    click.echo()
+    echo_line(style.warning(f"You are about to remove the index named '{name}'", bold=True))
+    echo_line(style.warning(f"which maps to the folder '{env.cwd}'", bold=True))
+    click.echo()
+    if click.confirm(click.style(f"Apply this change?", bold=True)):
+        click.echo(style.success("User deleted index"))
+        del env.global_index.index_directory[name]
+        save_global_index_data(env.global_index)
+    else:
+        click.echo(style.fail("User rejected index creation"))
+
+
 @main.command(name="create")
 @click.argument("name", type=str)
 @pass_env
@@ -100,5 +125,13 @@ def create(env: MnoteEnvironment, name: str):
         return
 
     # If we got to this point we can create the index!
-    env.global_index.index_directory[name] = {"path": env.cwd}
-    save_global_index_data(env.global_index)
+    click.echo()
+    echo_line(style.warning(f"You are about to create an index named '{name}'", bold=True))
+    echo_line(style.warning(f"which will be located in the folder '{env.cwd}'", bold=True))
+    click.echo()
+    if click.confirm(click.style(f"Apply this change?", bold=True)):
+        click.echo(style.success("User created index"))
+        env.global_index.index_directory[name] = {"path": env.cwd}
+        save_global_index_data(env.global_index)
+    else:
+        click.echo(style.fail("User rejected index creation"))

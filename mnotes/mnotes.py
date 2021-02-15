@@ -54,7 +54,7 @@ def mgo(ctx: click.core.Context, set_name: str):
 
 
 main.add_command(mnotes.cmd_config.config)
-main.add_command(mnotes.fix.mode)
+main.add_command(mnotes.fix.main)
 main.add_command(mnotes.cmd_index.main)
 
 

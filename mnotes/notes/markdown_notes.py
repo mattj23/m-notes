@@ -1,6 +1,8 @@
 """
     Tool for importing markdown and their metadata
 """
+import os
+
 import yaml
 
 from io import StringIO
@@ -39,6 +41,15 @@ class NoteInfo:
 
     def to_dict(self) -> Dict:
         return asdict(self)
+
+    def rel_path(self, path: str) -> str:
+        """ Display the path of this note relative to a given path """
+        return os.path.relpath(self.file_path, start=path)
+
+    @property
+    def file_name(self):
+        _, name = os.path.split(self.file_path)
+        return name
 
 
 class Note:
