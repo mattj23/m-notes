@@ -1,12 +1,18 @@
 """
     Commands for index operations
 """
+import os
 import re
 import sys
 import time
+from typing import List
+from zipfile import ZipFile, ZIP_DEFLATED
+from datetime import datetime as DateTime
 
 import click
 from mnotes.environment import MnoteEnvironment, pass_env, echo_line, save_global_index_data
+from mnotes.notes.index import NoteIndex
+from mnotes.notes.markdown_notes import NoteInfo
 
 valid_chars_pattern = re.compile(r"[^a-z0-9\-]")
 
@@ -42,8 +48,60 @@ def main(env: MnoteEnvironment, ctx: click.core.Context):
         for index in env.global_index.indices.values():
             echo_line(" * ", style.visible(index.name), f" ({len(index.notes)} notes): {index.path}")
 
+        echo_line()
+        echo_line(style.visible(" (use 'mnote index reload' to rebuild with checksums)"))
+
+
+@main.command(name="zip")
+@click.argument("names", type=str, nargs=-1)
+@pass_env
+def zip_cmd(env: MnoteEnvironment, names: List[str]):
+    """
+    Archive an index or multiple/all indices in zip files
+
+    Creates archives of the markdown notes (text files only, no resources) of the indices by compressing them into zip
+    files.  The files will be named with the index name and the current date and time and saved in the current
+    directory. This command can be run from anywhere on the machine, it does not need to be run from inside any of the
+    index folders.
+
+    You can specify a single index by name, several indices, or leave the 'name' argument blank in order to back up
+    all of them at once.
+    """
+    style = env.config.styles
+    click.echo()
+
+    failed = False
+    for index_name in names:
+        if index_name not in env.global_index.indices:
+            echo_line(style.fail(f"There is no index named '{index_name}' to archive!"))
+            failed = True
+    if failed:
+        return
+
+    if not names:
+        echo_line(style.visible("No index(s) specified, so zipping all of them..."))
+        names = [i.name for i in env.global_index.indices.values()]
+
+    start = time.time()
+    for name in names:
+        echo_line()
+        echo_line(click.style("Zipping index ", bold=True), style.visible(f"'{name}'", bold=True))
+
+        index: NoteIndex = env.global_index.indices[name]
+
+        now = DateTime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        output_name = os.path.join(env.cwd, f"{name}-{now}.zip")
+        with ZipFile(output_name, "w") as zip_handle:
+            with click.progressbar(index.notes.values()) as notes:
+                for note in notes:
+                    note: NoteInfo
+                    zip_handle.write(note.file_path,
+                                     arcname=os.path.relpath(note.file_path, start=index.path),
+                                     compress_type=ZIP_DEFLATED)
+
+    end = time.time()
     echo_line()
-    echo_line(style.visible(" (use 'mnote index reload' to rebuild with checksums)"))
+    echo_line(style.success(f"Operation completed in {end - start:0.1f} seconds"))
 
 
 @main.command(name="reload")

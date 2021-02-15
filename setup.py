@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as handle:
 
 setuptools.setup(
     name="m-notes",
-    version="0.1.4",
+    version="0.2.0",
     author="Matthew Jarvis",
     author_email="mattj23@gmail.com",
     description="Markdown note tools",
@@ -27,8 +27,8 @@ setuptools.setup(
     entry_points={
         "console_scripts": [
             "mnote=mnotes.mnotes:main",
-            "mgo=mnotes.mnotes:mgo",
-            "mdev=mnotes.dev.mdev:main"
+            # "mgo=mnotes.mnotes:mgo",
+            # "mdev=mnotes.dev.mdev:main"
         ]
     }
 )
