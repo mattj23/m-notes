@@ -18,12 +18,16 @@ mnote_version = pkg_resources.require("m-notes")[0].version
 @click.group(invoke_without_command=True)
 @click.pass_context
 def main(ctx: click.core.Context):
-    click.echo()
-    click.echo(click.style(f"M-Notes (v{mnote_version}) Markdown Note Manager", bold=True, underline=True))
 
     # Load the environment configuration data and global index structure and any cached indices
     config = load_config()
     global_data = load_global_index_data()
+
+    if config.clear_on_run:
+        click.clear()
+
+    click.echo()
+    click.echo(click.style(f"M-Notes (v{mnote_version}) Markdown Note Manager", bold=True, underline=True))
 
     # This inverted dependency structure constructs the shared environment object graph. This is critical to
     # being able to separate out the different components for unit testing with a mock filesystem

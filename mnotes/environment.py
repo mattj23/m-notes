@@ -78,15 +78,18 @@ class Config:
 
         style_config: Dict = kwargs.get("styles", {})
         self.styles = Styles(**style_config)
+        self.clear_on_run: bool = kwargs.get("clear_on_run", False)
 
     def print(self):
         click.echo(f" * active config file: {self.file}")
         click.echo(f" * default author: {self.author}")
+        click.echo(f" * clear terminal on run: {self.clear_on_run}")
 
     def write(self):
         data = {
             "author": self.author,
-            "styles": self.styles.to_serializable()
+            "styles": self.styles.to_serializable(),
+            "clear_on_run": self.clear_on_run
         }
         if os.path.exists(self.file):
             shutil.copy(self.file, self.file + ".back")

@@ -33,7 +33,24 @@ def author_name(env: MnoteEnvironment, author: List[str]):
 
     env.config.author = author[0].strip()
     env.config.write()
-    echo_line(" * setting author to ", env.config.styles.visible(f"'{env.config.author}'", bold=True))
+    echo_line()
+    echo_line("Setting author to ", env.config.styles.visible(f"'{env.config.author}'", bold=True))
+
+
+@config.command(name="clear")
+@click.argument("on_off", type=click.Choice(["on", "off"], case_sensitive=False))
+@pass_env
+def clear_terminal(env: MnoteEnvironment, on_off: click.Choice):
+    """ Set the option to clear the terminal whenever M-Notes is run """
+    style = env.config.styles
+    env.config.clear_on_run = on_off == "on"
+    env.config.write()
+
+    echo_line()
+    if env.config.clear_on_run:
+        echo_line("Clear terminal on run was turned ", style.success("ON"))
+    else:
+        echo_line("Clear terminal on run was turned ", style.fail("OFF"))
 
 
 @config.command(name="style")
@@ -47,7 +64,7 @@ def author_name(env: MnoteEnvironment, author: List[str]):
 @click.argument("style_name", type=str, nargs=-1)
 @pass_env
 def text_style(env: MnoteEnvironment, colors: bool, style_name: List[str], fg: Optional[str], bg: Optional[str],
-               bold: Optional[bool], underline: Optional[bool], blink: Optional[bool], reverse: Optional[bool] ):
+               bold: Optional[bool], underline: Optional[bool], blink: Optional[bool], reverse: Optional[bool]):
     """
     View or set the colors and formatting for the different text styles used by M-Notes
     """
@@ -121,7 +138,7 @@ def noneify_color(color_name: str) -> Optional[str]:
 
 def show_color_table():
     click.echo()
-    click.echo(click.style("ANSI terminal colors will display differently on different terminals and displays. The " 
+    click.echo(click.style("ANSI terminal colors will display differently on different terminals and displays. The "
                            "following output will show you what the colors will look like in your terminal with your "
                            "current settings."))
     click.echo()
@@ -131,5 +148,3 @@ def show_color_table():
         click.echo(f" * {name.ljust(longest)} ", nl=False)
         click.echo(click.style(f"this is text in this color  ", fg=name), nl=False)
         click.echo(click.style(" this is background ", bg=name))
-
-
