@@ -2,16 +2,16 @@
     Fix IDs Mode
 """
 import click
-from typing import List, Optional, Set
+from typing import List, Optional, Set, Callable
 
 from datetime import datetime as DateTime
 from datetime import timedelta as TimeDelta
 
-from .common import echo_problem_title
-from mnotes.notes.markdown_notes import load_all_notes, get_existing_ids, NoteMetadata
-from mnotes.notes.checks import note_checks, long_stamp_format
+from .common import echo_problem_title, load_working
+from mnotes.notes.checks import note_checks
 
-from mnotes.environment import MnoteEnvironment, pass_env, echo_line
+from mnotes.environment import MnoteEnvironment, pass_env, echo_line, ID_TIME_FORMAT
+from ..notes.markdown_notes import NoteInfo
 
 
 @click.command(name="id")
@@ -21,18 +21,10 @@ from mnotes.environment import MnoteEnvironment, pass_env, echo_line
 @click.argument("files", nargs=-1, type=click.Path())
 @pass_env
 def fix_id(env: MnoteEnvironment, files: List[click.Path], n: Optional[int], resolve: bool):
-    all_notes = load_all_notes(env.cwd)
-    if not files:
-        working = list(all_notes)
-    else:
-        working = [NoteMetadata(f) for f in files]
-    if working is None:
-        return
+    index = env.index_of_cwd
 
-    try:
-        all_ids = get_existing_ids(all_notes)
-    except ValueError as e:
-        click.echo(click.style(f"Error: {e}", fg="red"))
+    working = load_working(index, env.cwd, files)
+    if working is None:
         return
 
     style = env.config.styles
@@ -51,11 +43,11 @@ def fix_id(env: MnoteEnvironment, files: List[click.Path], n: Optional[int], res
                 echo_line(" * cannot generate ID for this note, it has ", style.warning("no creation time"))
                 continue
 
-            new_id = note.created.strftime(long_stamp_format)
+            new_id = note.created.strftime(ID_TIME_FORMAT)
             has_conflict = False
-            if new_id in all_ids:
+            if env.global_index.has_id(new_id):
                 echo_line(f" * cannot create ID {new_id} because it ",
-                          style.warning("conflicts with an existing ID"), " in the corpus")
+                          style.warning("conflicts with an existing ID"), " in the global directory")
                 has_conflict = True
 
             if new_id in new_ids:
@@ -64,14 +56,12 @@ def fix_id(env: MnoteEnvironment, files: List[click.Path], n: Optional[int], res
 
             if has_conflict:
                 if resolve:
-                    combined = all_ids.copy()
-                    combined.update(new_ids)
-                    new_c_time = suggest_conflict_fix(note, combined)
+                    new_c_time = suggest_conflict_fix(note, lambda id_: env.global_index.has_id(id_) or id_ in new_ids)
                     offset = abs((new_c_time - note.created).seconds)
-                    new_id = new_c_time.strftime(long_stamp_format)
+                    new_id = new_c_time.strftime(ID_TIME_FORMAT)
 
                     echo_line(f" * propose changing note creation time by ",
-                              style.visible("{offset} seconds to {new_c_time}"))
+                              style.visible(f"{offset} seconds to {new_c_time}"))
                     echo_line(" * new ID would then be ", style.visible(f"{new_id}"))
                     changes.append((note, new_id, new_c_time))
                     new_ids.add(new_id)
@@ -85,30 +75,30 @@ def fix_id(env: MnoteEnvironment, files: List[click.Path], n: Optional[int], res
             new_ids.add(new_id)
             changes.append((note, new_id, None))
 
-    click.echo()
+    echo_line()
     if conflicts > 0:
-        click.echo(style.warning(f"There were {conflicts} conflicts. Consider running with the --resolve option."))
+        echo_line(style.warning(f"There were {conflicts} conflicts. Consider running with the --resolve option."))
 
     if not changes:
-        click.echo(click.style("There were no potential fixes found", bold=True))
+        echo_line(click.style("There were no potential fixes found", bold=True))
         return
 
     if click.confirm(click.style(f"Apply these {len(changes)} changes?", bold=True)):
-        click.echo(style.success("User accepted changes"))
+        echo_line(style.success("User accepted changes"))
         for note, value, new_timestamp in changes:
-            note_with_content = NoteMetadata(note.file_path, store_content=True)
-            note_with_content.id = value
+            note_with_content = env.note_builder.load_note(note.file_path)
+            note_with_content.info.id = value
             if new_timestamp is not None:
-                note_with_content.created = new_timestamp
-            note_with_content.save_file()
-
+                note_with_content.info.created = new_timestamp
+            with env.provider.write_file(note.file_path) as handle:
+                handle.write(note_with_content.to_file_text())
     else:
-        click.echo(style.fail("User rejected changes"))
+        echo_line(style.fail("User rejected changes"))
 
 
-def suggest_conflict_fix(note: NoteMetadata, existing_ids: Set[str]) -> DateTime:
+def suggest_conflict_fix(note: NoteInfo, check: Callable[[str], bool]) -> DateTime:
     proposed = note.created
-    while proposed.strftime(long_stamp_format) in existing_ids:
+    while check(proposed.strftime(ID_TIME_FORMAT)):
         proposed = proposed + TimeDelta(seconds=1)
 
     return proposed

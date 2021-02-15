@@ -1,11 +1,12 @@
 """
     Fix missing title metadata
 """
+import os
+
 import click
 from typing import List, Optional
 
-from .common import echo_problem_title
-from mnotes.notes.markdown_notes import NoteMetadata, load_all_notes
+from .common import echo_problem_title, load_working
 from mnotes.notes.checks import note_checks
 from mnotes.environment import MnoteEnvironment, pass_env, echo_line
 
@@ -16,10 +17,9 @@ from mnotes.environment import MnoteEnvironment, pass_env, echo_line
 @click.argument("files", nargs=-1, type=click.Path())
 @pass_env
 def fix_author(env: MnoteEnvironment, n: Optional[int], author: Optional[str], files: List):
-    if not files:
-        working = load_all_notes(env.cwd)
-    else:
-        working = [NoteMetadata(f) for f in files]
+    index = env.index_of_cwd
+
+    working = load_working(index, env.cwd, files)
     if working is None:
         return
 
@@ -36,18 +36,19 @@ def fix_author(env: MnoteEnvironment, n: Optional[int], author: Optional[str], f
             echo_line(" * will set author to ", style.visible(f"'{author}'"))
             changes.append((note, author))
 
-    click.echo()
+    echo_line()
     if not changes:
-        click.echo(click.style("There were no potential fixes found", bold=True))
+        echo_line(click.style("There were no potential fixes found", bold=True))
         return
 
     if click.confirm(click.style(f"Apply these {len(changes)} changes?", bold=True)):
-        click.echo(style.success("User accepted changes"))
-        for note, new_title in changes:
-            note_with_content = NoteMetadata(note.file_path, store_content=True)
-            note_with_content.author = new_title
-            note_with_content.save_file()
+        echo_line(style.success("User accepted changes"))
+        for note, author in changes:
+            note_with_content = env.note_builder.load_note(note.file_path)
+            note_with_content.info.author = author
+            with env.provider.write_file(note.file_path) as handle:
+                handle.write(note_with_content.to_file_text())
     else:
-        click.echo(style.fail("User rejected changes"))
+        echo_line(style.fail("User rejected changes"))
 
 

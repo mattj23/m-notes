@@ -7,11 +7,10 @@ import re
 import click
 from typing import List, Optional
 
-from .common import echo_problem_title
-from mnotes.notes.markdown_notes import NoteMetadata, load_all_notes
+from .common import echo_problem_title, load_working
 from mnotes.notes.checks import note_checks
 from mnotes.environment import MnoteEnvironment, pass_env, echo_line
-
+from ..notes.markdown_notes import NoteInfo
 
 date_test_pattern = re.compile(r"^20[\d\.\-\_\s]*\d")
 valid_chars_pattern = re.compile(r"[^a-z0-9]")
@@ -27,10 +26,9 @@ delete_words = {"on", "to", "the", "of", "and", "is", "at", "a", "an", "for", "i
               help="Run the rename on all notes specified (use with --complete)")
 @pass_env
 def fix_filename(env: MnoteEnvironment, files: List, n: Optional[int], complete: bool, force: bool):
-    if not files:
-        working = load_all_notes(env.cwd)
-    else:
-        working = [NoteMetadata(f) for f in files]
+    index = env.index_of_cwd
+
+    working = load_working(index, env.cwd, files)
     if working is None:
         return
 
@@ -58,7 +56,7 @@ def fix_filename(env: MnoteEnvironment, files: List, n: Optional[int], complete:
             proposed_filename = complete_rewrite(note) if complete else prepend_id(note)
 
             if proposed_filename == note.file_name:
-                print(" * note already has the proposed name")
+                echo_line(style.success(" * note already has the proposed name"))
                 continue
 
             proposed_path = os.path.join(directory, proposed_filename)
@@ -81,25 +79,25 @@ def fix_filename(env: MnoteEnvironment, files: List, n: Optional[int], complete:
 
     click.echo()
     if conflicts > 0:
-        click.echo(style.warning(f"There were {conflicts} conflicts"))
+        echo_line(style.warning(f"There were {conflicts} conflicts"))
 
     if not changes:
-        click.echo(click.style("There were no potential fixes found", bold=True))
+        echo_line(click.style("There were no potential fixes found", bold=True))
         return
 
     if click.confirm(click.style(f"Apply these {len(changes)} changes?", bold=True)):
-        click.echo(style.success("User accepted changes"))
+        echo_line(style.success("User accepted changes"))
         for note, value in changes:
-            click.echo()
-            click.echo(f"Moving {note.title}")
-            click.echo(f" -> from: {os.path.relpath(note.file_path, start=os.curdir)}")
-            click.echo(f" -> to:   {os.path.relpath(value, start=os.curdir)}")
+            echo_line()
+            echo_line(f"Moving {note.title}")
+            echo_line(f" -> from: {os.path.relpath(note.file_path, start=os.curdir)}")
+            echo_line(f" -> to:   {os.path.relpath(value, start=os.curdir)}")
             shutil.move(note.file_path, value)
     else:
-        click.echo(style.fail("User rejected changes"))
+        echo_line(style.fail("User rejected changes"))
 
 
-def prepend_id(note: NoteMetadata) -> str:
+def prepend_id(note: NoteInfo) -> str:
     base_name, extension = os.path.splitext(note.file_name)
     return f"{note.id}_{base_name.strip()}{extension}"
 
@@ -117,7 +115,7 @@ def add_words_up_to(length: int, word_set: List[str]) -> List[str]:
     return built_words
 
 
-def complete_rewrite(note: NoteMetadata) -> str:
+def complete_rewrite(note: NoteInfo) -> str:
     # Remove leading dates
     working = date_test_pattern.sub("", note.title.lower())
     working = valid_chars_pattern.sub(" ", working)
