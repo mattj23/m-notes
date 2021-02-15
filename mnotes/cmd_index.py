@@ -42,6 +42,29 @@ def main(env: MnoteEnvironment, ctx: click.core.Context):
         for index in env.global_index.indices.values():
             echo_line(" * ", style.visible(index.name), f" ({len(index.notes)} notes): {index.path}")
 
+    echo_line()
+    echo_line(style.visible(" (use 'mnote index reload' to rebuild with checksums)"))
+
+
+@main.command(name="reload")
+@pass_env
+def reload(env: MnoteEnvironment):
+    """
+    Rebuild all indices using checksums.
+
+    M-Notes by default will verify the integrity of its cached data by looking at the file size and last modified
+    timestamp to guess at whether the file has changed since it was last read (this is similar to the method which
+    rsync uses) However, it's up to the file system to report these values accurately, so this option uses the SHA1
+    checksum to rebuild the indicies. It's faster than re-reading all of the files, but slower than simply looking at
+    the file size and timestamps.
+    """
+    style = env.config.styles
+
+    start_time = time.time()
+    env.global_index.load_all(True)
+    end_time = time.time()
+    click.echo(style.success(f"Updated all indices with checksums, took {end_time - start_time:0.2f} seconds"))
+
 
 @main.command(name="delete")
 @click.argument("name", type=str)
