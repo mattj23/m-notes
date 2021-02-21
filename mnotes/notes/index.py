@@ -193,6 +193,22 @@ class GlobalIndices:
         """ Check if the ID exists anywhere in the global index, including in the current conflicts """
         return check_id in self.by_id or check_id in self.conflicts
 
+    def backlinks(self) -> Dict[str, List[str]]:
+        """
+        Generate all backlinks for the entire global index in a single pass through all note information objects,
+        creating a dictionary of lists in which the key is the ID for each note and the list is a list of IDs that
+        link to this note. Notes with conflicting IDs do not get backlinks generated for them
+        """
+        bk_links: Dict[str, List[str]] = {}
+        for note in filter(lambda n: n.links_to is not None, self.by_id.values()):
+            for fwd in note.links_to:
+                if fwd not in bk_links:
+                    bk_links[fwd] = [note.id]
+                else:
+                    bk_links[fwd].append(note.id)
+
+        return bk_links
+
     def load_all(self, force_checksum: bool = False):
         """
         Load all indices globally. This will attempt to start from pre-loaded indices which only need to be

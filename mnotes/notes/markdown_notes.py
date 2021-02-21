@@ -2,7 +2,7 @@
     Tool for importing markdown and their metadata
 """
 import os
-
+import re
 import yaml
 
 from io import StringIO
@@ -13,6 +13,9 @@ from datetime import datetime as DateTime
 from datetime import tzinfo
 
 from ..utility.file_system import FileSystemProvider
+
+ID_TIME_FORMAT = "%Y%m%d%H%M%S"
+ID_LINK_PATTERN = re.compile(r"\[\[[^\]\[\n]*(\d{14})[^\]\[\n]*\]\]")
 
 
 class FailedMetadataException(Exception):
@@ -38,6 +41,7 @@ class NoteInfo:
     author: Optional[str]
     state: MetaData = MetaData.UNKNOWN
     info: Optional[str] = None
+    links_to: Optional[List[str]] = None
 
     def to_dict(self) -> Dict:
         return asdict(self)
@@ -145,6 +149,11 @@ class NoteBuilder:
                 info_data["created"] = None
                 info_data["info"] = "Failed to parse creation time stamp"
                 info_data["state"] = MetaData.FAILED
+
+        # Search for links
+        links = ID_LINK_PATTERN.findall(markdown_content)
+        if links:
+            info_data["links_to"] = [e for e in links]
 
         return NoteInfo(**info_data), meta_data, markdown_content
 

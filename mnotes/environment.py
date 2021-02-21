@@ -12,7 +12,6 @@ from mnotes.utility.file_system import FileSystemProvider
 APPLICATION_NAME = "m-notes"
 CONFIG_FILE = "m-notes.yaml"
 GLOBAL_INDEX_FILE = "global-indices.yaml"
-ID_TIME_FORMAT = "%Y%m%d%H%M%S"
 
 
 class Style:

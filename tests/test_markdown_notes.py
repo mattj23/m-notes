@@ -31,6 +31,7 @@ def mock_builder():
         "/broken_timestamp2.md": {"content": sample.MD_BROKEN_TIMESTAMP_2, "modified": 100},
         "/ok.md": {"content": sample.MD_SAMPLE_NOTE_0, "modified": 100},
         "/extra.md": {"content": sample.MD_EXTRA_METADATA, "modified": 100},
+        "/links_0.md": {"content": sample.MD_SAMPLE_WITH_LINKS_0, "modified": 100},
     }
     provider = TestFileSystemProvider(internal)
     local = tz.gettz("America/New_York")
@@ -97,6 +98,11 @@ def test_note_to_content_preserves_extra_keys(mock_builder):
     assert meta["author"] == "New Author"
     assert meta["source"] == "IPhone 19"
     assert sorted(meta["tags"]) == sorted(["synergy", "upcycle"])
+
+
+def test_note_with_links_0(mock_builder):
+    note = mock_builder.load_note("/links_0.md")
+    assert sorted(note.info.links_to) == sorted(["20210213160641", "20210213172911"])
 
 
 def test_note_to_content_exception_on_failed_meta(mock_builder):

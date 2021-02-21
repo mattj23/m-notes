@@ -10,8 +10,8 @@ from datetime import timedelta as TimeDelta
 from .common import echo_problem_title, load_working
 from mnotes.notes.checks import note_checks
 
-from mnotes.environment import MnoteEnvironment, pass_env, echo_line, ID_TIME_FORMAT
-from ..notes.markdown_notes import NoteInfo
+from mnotes.environment import MnoteEnvironment, pass_env, echo_line
+from ..notes.markdown_notes import NoteInfo, ID_TIME_FORMAT
 
 
 @click.command(name="id")

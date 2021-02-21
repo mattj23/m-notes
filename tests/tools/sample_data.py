@@ -79,6 +79,22 @@ id: 20210213160641
 This is some text in the sample note 1
 """
 
+MD_SAMPLE_WITH_LINKS_0 = """
+...
+title: Linked Note Sample 0
+author: Gary Garrison
+created: '2021-02-13T16:06:25.245783-05:00'
+id: 20210213160625
+...
+# Sample Linked Note 0
+
+This is some text in the sample linked note 0
+
+And here is a link to another note [[20210213160641]]
+
+And another link [[surrounded20210213172911with-some-stuff]] to a different note
+"""
+
 MD_EXTRA_METADATA = """
 ...
 title: Extra Metadata Example
@@ -141,3 +157,14 @@ INDEX_WITH_CONFLICTS = {
    '/echo/note-04.md': {'content': '---\nauthor: Fiona Fiorella\ncreated: 2021-01-24 05:28:08-05:00\nid: null\ntitle: Nibh tellus molestie massa sapien\n---\n# Nibh tellus molestie massa sapien\n\nOrnare arcu dui vivamus arcu lectus mauris ultrices eros in cursus turpis massa tincidunt id faucibus nisl tincidunt eget nullam non nisi est non quam lacus suspendisse faucibus interdum.  Ac tincidunt vitae semper quis lectus at consectetur lorem donec massa sapien faucibus et.  Ultricies tristique nulla odio aenean sed adipiscing diam in est.\n\nPosuere lorem placerat vestibulum lectus mauris ultrices eros in cursus turpis massa nullam ac tortor.  Molestie a iaculis at erat pellentesque pellentesque elit eget gravida cum vel orci porta non pulvinar neque laoreet suspendisse iaculis at erat pellentesque adipiscing commodo elit at imperdiet dui lacus.  Vitae tempus quam phasellus vestibulum lorem.  Augue neque gravida in magna etiam.  Cursus turpis massa tincidunt dui ut aenean pharetra magna ac placerat.\n\n', 'modified': 1611484088},
    '/echo/note-05.md': {'content': '---\nauthor: Alice Allison\ncreated: 1993-03-20 01:11:14-10:00\nid: null\ntitle: Phasellus vestibulum lorem\n---\n# Phasellus vestibulum lorem\n\nNon quam lacus suspendisse faucibus interdum posuere lorem placerat vestibulum lectus mauris ultrices eros in cursus turpis massa nullam ac tortor vitae purus faucibus quis hendrerit dolor magna eget.  Tincidunt vitae semper quis lectus nulla at volutpat pellentesque nec nam aliquam.  Magna ac placerat vestibulum lectus mauris auctor elit sed vulputate mi morbi blandit cursus risus at ultrices mi tempus imperdiet nulla a cras semper auctor.  Elementum nibh tellus molestie massa sapien faucibus et molestie ac feugiat ligula ullamcorper malesuada proin libero iaculis nunc sed augue lacus.  Bibendum ut tristique libero enim sed faucibus turpis in.\n\n', 'modified': 732625874},
 }
+
+# This index contains notes with links between them, and the links are included in the link dictionary below
+INDEX_WITH_LINKS = {
+   '/links/note-00.md': {'content': "---\nauthor: Bob Bobertsmith\ncreated: 2017-06-09 08:38:41+00:00\nid: '20170609083841'\ntitle: Consequat mauris auctor neque vitae tempus\n---\n# Consequat mauris auctor neque vitae tempus\n\nVulputate odio tempus egestas sed sed risus vivamus arcu felis bibendum ut tristique libero enim sed faucibus turpis in.\n\nUllamcorper malesuada proin libero iaculis nunc sed augue lacus viverra [[19910802211642]] vitae congue cras adipiscing enim eu turpis egestas pretium euismod.  Ullamcorper dignissim cras tincidunt lobortis sit amet volutpat consequat mauris auctor neque vitae tempus.  Bibendum neque morbi tincidunt augue.  Lorem sed risus sed cras ornare arcu dui vivamus arcu lectus mauris ultrices eros in cursus turpis massa tincidunt id faucibus nisl tincidunt eget nullam non nisi est non quam.\n\n", 'modified': 1496997521},
+   '/links/note-01.md': {'content': "---\nauthor: Eva Evanston\ncreated: 2003-11-27 10:37:17+02:00\nid: '20031127103717'\ntitle: Et dolore magna aliqua ullamcorper\n---\n# Et dolore magna aliqua ullamcorper\n\nTincidunt lobortis sit amet volutpat consequat mauris auctor neque vitae tempus quam phasellus vestibulum [[20201204110546]] lorem sed risus sed [[20160227182247]] cras ornare arcu dui vivamus arcu lectus mauris ultrices eros in.\n\nMauris cursus mattis molestie a iaculis at erat neque.  Molestie ac feugiat ligula ullamcorper malesuada proin libero iaculis nunc sed augue lacus viverra vitae congue cras.\n\n", 'modified': 1069922237},
+   '/links/note-02.md': {'content': "---\nauthor: Fiona Fiorella\ncreated: 2020-12-04 11:05:46+01:00\nid: '20201204110546'\ntitle: Diam phasellus vestibulum lorem sed risus\n---\n# Diam phasellus vestibulum lorem sed risus\n\nRisus commodo viverra maecenas accumsan lacus vel facilisis quis varius quam quisque id ornare arcu dui vivamus arcu felis bibendum [[19910802211642]] faucibus a pellentesque sit.  Sit amet justo donec enim in nibh mauris.\n\n", 'modified': 1607076346},
+   '/links/note-03.md': {'content': "---\nauthor: Dave Davidson\ncreated: 2016-02-27 18:22:47+07:00\nid: '20160227182247'\ntitle: Non quam lacus suspendisse\n---\n# Non quam lacus suspendisse\n\nRisus sed vulputate odio tempus egestas sed sed [[20201204110546]] risus vivamus arcu felis bibendum ut tristique libero.  Sed cras ornare arcu dui vivamus arcu lectus mauris ultrices eros in cursus turpis massa tincidunt id.  Ipsum faucibus et molestie ac feugiat sed lectus vestibulum ac auctor augue mauris augue neque.  Nulla a cras semper auctor neque vitae tempus quam ut consequat semper viverra nam.  Ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt.\n\n", 'modified': 1456572167},
+   '/links/note-04.md': {'content': "---\nauthor: Charles Charleston\ncreated: 1991-08-02 21:16:42-03:00\nid: '19910802211642'\ntitle: Lorem placerat vestibulum lectus mauris ultrices eros\n---\n# Lorem placerat vestibulum lectus mauris ultrices eros\n\nSed vulputate odio at risus viverra adipiscing at in tellus lectus arcu bibendum at varius vel pharetra vel amet dictum sit.  Erat pellentesque pellentesque [[20160227182247]] elit eget.  Eget est lorem ipsum cursus mattis molestie a iaculis at erat pellentesque pellentesque elit eget gravida cum vel orci.\n\n", 'modified': 681178602},
+}
+
+INDEX_WITH_LINKS_LINKS = {'20170609083841': ['19910802211642'], '20031127103717': ['20201204110546', '20160227182247'], '20201204110546': ['19910802211642'], '20160227182247': ['20201204110546'], '19910802211642': ['20160227182247']}

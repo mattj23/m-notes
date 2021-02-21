@@ -4,7 +4,7 @@ import yaml
 import io
 import string
 import random
-from mnotes.environment import ID_TIME_FORMAT
+from mnotes.notes.markdown_notes import ID_TIME_FORMAT
 from datetime import datetime as DateTime
 from dateutil import tz
 
@@ -222,37 +222,63 @@ def render_note(data: Dict) -> str:
         return output.getvalue()
 
 
-if __name__ == '__main__':
+def add_forward_links(corpus: Dict[str, Dict], prob: float) -> Dict[str, List[str]]:
+    """
+    Add a bunch of links to a corpus of notes. The probability of any note being linked to any other is specified here
+    as a value between 0 and 1. The generated links are returned in a dictionary of which each note links to
+    :param corpus: the corpus of note data specified as list of dictionaries
+    :param prob: the probability of a link existing between each pair of notes in the corpus
+    :return: a dictionary specifying note id with a list of notes it links to
+    """
+    ids = [n['id'] for n in corpus.values()]
+    links: Dict[str, List] = {}
 
-    backing = {}
-    # for folder in ["bravo", "charlie", "delta"]:
-    #     for i in range(3):
-    #         note = random_note()
-    #         created: DateTime = note['created']
-    #         backing[f"/{folder}/note-{i:02d}.md"] = {
-    #             "content": render_note(note),
-    #             "modified": int(created.timestamp())
-    #         }
-    #
-    # conflicts = conflicting_ids(4)
-    # paths = ["/bravo/conflict-00.md", "/bravo/conflict-01.md", "/charlie/conflict.md", "/delta/conflict.md"]
-    # for path, note in zip(paths, conflicts):
-    #     backing[path] = {
-    #         "content": render_note(note),
-    #         "modified": int(note['created'].timestamp())
-    #     }
-    #
-    for i in range(3):
+    for path, note in corpus.items():
+        for id_ in [i for i in ids if i != note['id']]:
+            if random.random() > prob:
+                continue
+
+            # put a link to id_ in the note
+            start = note["content"].find("\n") + 1
+
+            words: List[str] = note["content"][start:].split(" ")
+            insert = random.randint(1, len(words) - 1)
+            words.insert(insert, f"[[{id_}]]")
+            note["content"] = note["content"][:start] + " ".join(words)
+            if note['id'] in links:
+                links[note['id']].append(id_)
+            else:
+                links[note['id']] = [id_]
+    return links
+
+
+def make_corpus(path: str, count: int) -> Dict:
+    corpus = {}
+    for i in range(count):
         note = random_note()
-        created: DateTime = note['created']
-        note = remove_id(note)
+        corpus[f"{path}/note-{i:02d}.md"] = note
+    return corpus
 
-        backing[f"/echo/note-{i:02d}.md"] = {
+
+def render_corpus(corpus: Dict) -> Dict:
+    backing = {}
+    for path, note in corpus.items():
+        created: DateTime = note['created']
+        backing[path] = {
             "content": render_note(note),
             "modified": int(created.timestamp())
         }
+    return backing
 
+
+if __name__ == '__main__':
+    corpus_ = make_corpus("/links", 5)
+    links = add_forward_links(corpus_, 0.5)
+
+    backing = render_corpus(corpus_)
     print("DATA_SET_NAME = {")
     for k, v in backing.items():
         print(f"'{k}': {v},")
     print("}")
+
+    print(f"LINKS = {links}")
