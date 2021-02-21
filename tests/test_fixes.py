@@ -9,7 +9,7 @@ from mnotes.notes.markdown_notes import NoteBuilder, NoteInfo
 from mnotes.utility.change import ChangeTransaction
 from tests.test_index import local_tz
 
-from mnotes.fix.common import CreationFixer, IdFixer
+from mnotes.fix.common import CreationFixer, IdFixer, AuthorFixer, TitleFixer
 from mnotes.notes.markdown_notes import ID_TIME_FORMAT
 from tests.tools.file_system_mocks import TestFileSystemProvider
 from datetime import datetime as DateTime
@@ -216,3 +216,74 @@ def test_filename_complete_rename(transact_fixture):
     assert result.is_ok
     assert but_for(note2.info, "file_path") == but_for(note.info, "file_path")
     assert note2.content == note.content
+
+
+def test_author_check_true(check_fixture):
+    provider, builder = check_fixture
+    note = builder.note_builder.load_note("/fix/author.md")
+    fixer = AuthorFixer(builder.note_builder, "Irene Irenski")
+
+    assert fixer.check(note.info)
+
+
+def test_author_check_false(check_fixture):
+    provider, builder = check_fixture
+    note = builder.note_builder.load_note("/alpha/note-00.md")
+    fixer = AuthorFixer(builder.note_builder, "Irene Irenski")
+
+    assert not fixer.check(note.info)
+
+
+def test_author_fix(check_fixture):
+    provider, builder = check_fixture
+    note = builder.note_builder.load_note("/fix/author.md")
+    fixer = AuthorFixer(builder.note_builder, "Irene Irenski")
+    result = fixer.try_change(note.info, ChangeTransaction())
+
+    result.change.change_maker.apply_change(result.change)  # convoluted, but to ensure that it's stand-alone
+    note2 = builder.note_builder.load_note("/fix/author.md")
+
+    assert result.is_ok
+    assert note2.info.author == "Irene Irenski"
+    assert but_for(note.info, "author") == but_for(note2.info, "author")
+    assert note.content == note2.content
+
+
+def test_title_check_true(check_fixture):
+    provider, builder = check_fixture
+    note = builder.note_builder.load_note("/fix/no-title-but-heading.md")
+    fixer = TitleFixer(builder.note_builder)
+
+    assert fixer.check(note.info)
+
+
+def test_title_check_false(check_fixture):
+    provider, builder = check_fixture
+    note = builder.note_builder.load_note("/alpha/note-00.md")
+    fixer = TitleFixer(builder.note_builder)
+
+    assert not fixer.check(note.info)
+
+
+def test_title_fix_from_heading(check_fixture):
+    provider, builder = check_fixture
+    note = builder.note_builder.load_note("/fix/no-title-but-heading.md")
+    fixer = TitleFixer(builder.note_builder)
+    result = fixer.try_change(note.info, ChangeTransaction())
+
+    result.change.change_maker.apply_change(result.change)  # convoluted, but to ensure that it's stand-alone
+    note2 = builder.note_builder.load_note("/fix/no-title-but-heading.md")
+
+    assert result.is_ok
+    assert note2.info.title == "At quis risus"
+    assert but_for(note.info, "title") == but_for(note2.info, "title")
+    assert note.content == note2.content
+
+
+def test_title_cant_fix_no_heading(check_fixture):
+    provider, builder = check_fixture
+    note = builder.note_builder.load_note("/fix/no-title-or-heading.md")
+    fixer = TitleFixer(builder.note_builder)
+    result = fixer.try_change(note.info, ChangeTransaction())
+
+    assert result.is_failed
