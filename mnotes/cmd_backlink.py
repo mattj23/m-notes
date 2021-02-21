@@ -1,10 +1,9 @@
-import sys
 import time
+from hashlib import md5
 
 import click
 from typing import List, Dict, Optional
 from mnotes.environment import MnoteEnvironment, pass_env, echo_line
-from mnotes.notes.markdown_notes import NoteInfo
 
 
 @click.group(invoke_without_command=True, name="backlink")
@@ -34,9 +33,8 @@ def gen_backlinks(env: MnoteEnvironment):
     start = time.time()
     changes = 0
     for note in filter(lambda n: n.has_backlink, env.global_index.by_id.values()):
-        echo_line(f"Updating {note.file_name}")
-        changes += 1
         note_with_content = env.note_builder.load_note(note.file_path)
+        check = md5(note_with_content.content.strip().encode()).hexdigest()
 
         links: Optional[List[str]] = back_links.get(note.id, None)
         if not links:
@@ -50,6 +48,14 @@ def gen_backlinks(env: MnoteEnvironment):
 
             note_with_content.set_mnote_section("\n".join(link_lines))
 
+        updated = md5(note_with_content.content.strip().encode()).hexdigest()
+
+        if check == updated:
+            continue
+
+        echo_line(f"Updating {note.file_name}")
+        changes += 1
+
         with env.provider.write_file(note.file_path) as handle:
             handle.write(note_with_content.to_file_text())
 
@@ -58,8 +64,6 @@ def gen_backlinks(env: MnoteEnvironment):
     echo_line()
     echo_line("Backlink generation took ", style.success(f"{bl_gen:0.2f} seconds"))
     echo_line("Modified ", style.visible(f"{changes}"), " files in ", style.success(f"{mod_time:0.2f} seconds"))
-
-
 
 
 @main.command(name="set")
