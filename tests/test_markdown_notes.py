@@ -32,6 +32,7 @@ def mock_builder():
         "/ok.md": {"content": sample.MD_SAMPLE_NOTE_0, "modified": 100},
         "/extra.md": {"content": sample.MD_EXTRA_METADATA, "modified": 100},
         "/links_0.md": {"content": sample.MD_SAMPLE_WITH_LINKS_0, "modified": 100},
+        "/with_mnote.md": {"content": sample.MD_SAMPLE_MNOTE_SECTION, "modified": 100},
     }
     provider = TestFileSystemProvider(internal)
     local = tz.gettz("America/New_York")
@@ -151,3 +152,12 @@ def test_note_to_content_updates_created(mock_builder):
     _, meta, _ = _extract_yaml_front_matter(note.to_file_text())
 
     assert d == meta['created']
+
+
+def test_ignores_mnote_section(mock_builder):
+    note = mock_builder.load_note("/with_mnote.md")
+    expected = """# Note Sample that has M-Note Magic Section
+
+This is some text in the sample note 1
+"""
+    assert note.content == expected

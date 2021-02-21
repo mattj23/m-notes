@@ -95,6 +95,24 @@ And here is a link to another note [[20210213160641]]
 And another link [[surrounded20210213172911with-some-stuff]] to a different note
 """
 
+MD_SAMPLE_MNOTE_SECTION = """
+...
+title: Note Sample With M-Note Section
+author: Harry Harrison
+created: '2020-02-13T16:06:41.927650-05:00'
+id: 20200213160641
+...
+# Note Sample that has M-Note Magic Section
+
+This is some text in the sample note 1
+---
+# M-Note References
+
+this is some data here and 
+here's some more
+"""
+
+
 MD_EXTRA_METADATA = """
 ...
 title: Extra Metadata Example

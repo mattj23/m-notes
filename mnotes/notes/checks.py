@@ -51,11 +51,3 @@ def file_c_time(file_path: str) -> Tuple[DateTime, bool]:
     except AttributeError:
         c_time = DateTime.fromtimestamp(f_stat.st_mtime)
     return c_time, False
-
-
-def to_timestamp_id(date_time: DateTime) -> str:
-    return date_time.strftime(long_stamp_format)
-
-
-def from_timestamp_id(time_stamp: str) -> DateTime:
-    return DateTime.strptime(time_stamp, long_stamp_format)

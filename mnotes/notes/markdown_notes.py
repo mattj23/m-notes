@@ -193,13 +193,21 @@ def _extract_yaml_front_matter(content: str) -> Tuple[MetaData, Optional[Dict], 
 
     If it appears that there should be front matter but the information does not deserialize it will throw an error
     instead of returning None.
+
+    Finally, if the note has two lines that look like this:
+
+    ---
+    # M-Note {..}
+
+    ...everything underneath will be ignored.
+
     :param content: the text content of the file
     :return:
     """
     valid_tokens = ["...", "---"]
     lines = content.strip().split("\n")
     if lines[0].strip() not in valid_tokens:
-        return MetaData.MISSING, None, content
+        return MetaData.MISSING, None, _strip_mnote_section(content)
 
     front_matter_lines = []
     normal_lines = []
@@ -216,12 +224,22 @@ def _extract_yaml_front_matter(content: str) -> Tuple[MetaData, Optional[Dict], 
 
     # If we had the start of a front matter block but never ended it we return None
     if not is_complete:
-        return MetaData.FAILED, None, content
+        return MetaData.FAILED, None, _strip_mnote_section(content)
 
     normal_content = "\n".join(normal_lines)
 
     try:
         parsed = yaml.safe_load("\n".join(front_matter_lines))
-        return MetaData.UNKNOWN, parsed, normal_content
+        return MetaData.UNKNOWN, parsed, _strip_mnote_section(normal_content)
     except:
-        return MetaData.FAILED, None, content
+        return MetaData.FAILED, None, _strip_mnote_section(content)
+
+
+def _strip_mnote_section(content: str) -> str:
+    lines = content.split("\n")
+    searchable = list(enumerate(line.strip() for line in lines))
+    for i, line in searchable[:-1]:
+        if line.startswith("---") and searchable[i+1][1].startswith("# M-Note"):
+            return "\n".join(lines[:i]) + "\n"
+
+    return content
