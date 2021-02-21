@@ -22,6 +22,46 @@ def main(env: MnoteEnvironment, ctx: click.core.Context):
     echo_line(style.success(f" * updated global index, took {end_time - start_time:0.2f} seconds"))
 
 
+@main.command(name="gen")
+@pass_env
+def gen_backlinks(env: MnoteEnvironment):
+    style = env.config.styles
+    start = time.time()
+    back_links = env.global_index.backlinks()
+    bl_gen = time.time() - start
+
+    echo_line()
+    start = time.time()
+    changes = 0
+    for note in filter(lambda n: n.has_backlink, env.global_index.by_id.values()):
+        echo_line(f"Updating {note.file_name}")
+        changes += 1
+        note_with_content = env.note_builder.load_note(note.file_path)
+
+        links: Optional[List[str]] = back_links.get(note.id, None)
+        if not links:
+            note_with_content.set_mnote_section("\nNo links to this file found in any of the indices.\n")
+        else:
+            link_lines = [""]
+            for id_ in links:
+                linked_from = env.global_index.by_id[id_]
+                link_lines.append(f" * [[{linked_from.id}]] {linked_from.title}")
+            link_lines.append("")
+
+            note_with_content.set_mnote_section("\n".join(link_lines))
+
+        with env.provider.write_file(note.file_path) as handle:
+            handle.write(note_with_content.to_file_text())
+
+    mod_time = time.time() - start
+
+    echo_line()
+    echo_line("Backlink generation took ", style.success(f"{bl_gen:0.2f} seconds"))
+    echo_line("Modified ", style.visible(f"{changes}"), " files in ", style.success(f"{mod_time:0.2f} seconds"))
+
+
+
+
 @main.command(name="set")
 @click.argument("on_off", type=click.Choice(["on", "off"], case_sensitive=False))
 @click.argument("files", nargs=-1, type=click.Path())
@@ -56,7 +96,6 @@ def set_backlinks(env: MnoteEnvironment, on_off: click.Choice, files: List[click
 
     mode = str(on_off).lower() == "on"
     mode_text = style.success("ON") if mode else style.fail("OFF")
-    echo_line(style.visible(str(mode)))
     changes = []
     skip = 0
     for note in working:
@@ -83,7 +122,3 @@ def set_backlinks(env: MnoteEnvironment, on_off: click.Choice, files: List[click
                 handle.write(note_with_content.to_file_text())
     else:
         echo_line(style.fail("User rejected changes"))
-
-
-
-

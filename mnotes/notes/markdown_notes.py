@@ -112,6 +112,7 @@ class Note:
         stripped_content += "---\n# M-Note References\n*This section is automatically generated, any text placed in " \
                             "or below it will be lost on the next update.*\n"
         stripped_content += section_text
+        self.content = stripped_content
 
 
 class NoteBuilder:
@@ -177,7 +178,7 @@ class NoteBuilder:
                 info_data["state"] = MetaData.FAILED
 
         # Search for links
-        links = ID_LINK_PATTERN.findall(markdown_content)
+        links = ID_LINK_PATTERN.findall(_strip_mnote_section(markdown_content))
         if links:
             info_data["links_to"] = [e for e in links]
 

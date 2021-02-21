@@ -184,6 +184,11 @@ def test_note_to_content_updates_created(mock_builder):
     assert d == meta['created']
 
 
+def test_ignores_mnote_section_for_links(mock_builder):
+    note = mock_builder.load_note("/with_mnote.md")
+    assert not note.info.links_to
+
+
 def test_ignores_mnote_section(mock_builder):
     note = mock_builder.load_note("/with_mnote.md")
     expected = """# Note Sample that has M-Note Magic Section
@@ -191,3 +196,11 @@ def test_ignores_mnote_section(mock_builder):
 This is some text in the sample note 1
 """
     assert _strip_mnote_section(note.content) == expected
+
+
+def test_updates_mnote_section(mock_builder):
+    note = mock_builder.load_note("/with_mnote.md")
+    assert "this is some data here and" in note.to_file_text()
+
+    note.set_mnote_section("THIS IS THE REPLACEMENT")
+    assert "THIS IS THE REPLACEMENT" in note.to_file_text()
