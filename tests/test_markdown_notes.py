@@ -7,7 +7,7 @@ import tests.tools.sample_data as sample
 from tests.tools.file_system_mocks import TestFileSystemProvider
 from datetime import datetime as DateTime
 from mnotes.notes.markdown_notes import (NoteBuilder, MetaData, FailedMetadataException, _extract_yaml_front_matter,
-                                         NoteInfo, _strip_mnote_section)
+                                         NoteInfo, _strip_mnote_section, _end_with_two_blank_lines)
 from dateutil import tz
 
 
@@ -204,3 +204,24 @@ def test_updates_mnote_section(mock_builder):
 
     note.set_mnote_section("THIS IS THE REPLACEMENT")
     assert "THIS IS THE REPLACEMENT" in note.to_file_text()
+
+
+def test_end_with_two_blank_lines_0():
+    text = "this is some text"
+    assert text + "\n\n" == _end_with_two_blank_lines(text)
+
+
+def test_end_with_two_blank_lines_1():
+    text = "this is some text\n"
+    assert text + "\n" == _end_with_two_blank_lines(text)
+
+
+def test_end_with_two_blank_lines_2():
+    text = "this is some text\n\n"
+    assert text == _end_with_two_blank_lines(text)
+
+
+def test_end_with_two_blank_lines_3():
+    text = "this is some text\n\n\n"
+    assert text == _end_with_two_blank_lines(text)
+

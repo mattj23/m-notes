@@ -270,3 +270,9 @@ def _strip_mnote_section(content: str) -> str:
             return "\n".join(lines[:i]) + "\n"
 
     return content
+
+
+def _end_with_two_blank_lines(content: str) -> str:
+    while not content.endswith("\n\n"):
+        content += "\n"
+    return content
