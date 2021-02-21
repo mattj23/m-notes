@@ -6,7 +6,6 @@ import re
 from datetime import datetime as DateTime
 from typing import Tuple
 
-long_stamp_pattern = re.compile(r"20\d{12}")
 
 
 note_checks = {
@@ -38,16 +37,3 @@ note_checks = {
 }
 
 
-def file_c_time(file_path: str) -> Tuple[DateTime, bool]:
-    """
-    Get the file creation time from the operating system. This will not return good results on Linux
-    :param file_path:
-    :return: a datetime and a bool indicating whether it was the creation time or modification time returned
-    """
-    f_stat = os.stat(file_path)
-    try:
-        c_time = DateTime.fromtimestamp(f_stat.st_birthtime)
-        return c_time, True
-    except AttributeError:
-        c_time = DateTime.fromtimestamp(f_stat.st_mtime)
-    return c_time, False

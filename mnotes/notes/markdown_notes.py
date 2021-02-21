@@ -16,6 +16,7 @@ from ..utility.file_system import FileSystemProvider
 
 ID_TIME_FORMAT = "%Y%m%d%H%M%S"
 ID_LINK_PATTERN = re.compile(r"\[\[[^\]\[\n]*(\d{14})[^\]\[\n]*\]\]")
+LONG_STAMP_PATTERN = re.compile(r"20\d{12}")
 
 
 class FailedMetadataException(Exception):

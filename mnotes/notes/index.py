@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from mnotes.utility.file_system import FileInfo, FileSystemProvider
 
 from .markdown_notes import NoteInfo, NoteBuilder, MetaData
+from ..utility.change import ChangeTransaction
 from ..utility.json_encoder import MNotesEncoder, MNotesDecoder
 
 
@@ -156,6 +157,14 @@ class GlobalIndices:
 
         # Callback to run after loading has finished
         self.on_load: Callable[[GlobalIndices], None] = kwargs.get("on_load", None)
+
+    def create_empty_transaction(self) -> ChangeTransaction:
+        empty = ChangeTransaction()
+        empty.ids.update(self.all_ids)
+        for index in self.indices.values():
+            empty.file_paths.update(index.files.keys())
+
+        return empty
 
     def find_conflicts(self, path: str) -> Dict[str, IndexConflict]:
         """ Detect conflicts between the existing global index and the contents of a new directory """
