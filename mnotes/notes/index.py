@@ -56,6 +56,17 @@ class NoteIndex:
         }
         return json.dumps(output, indent=4, cls=MNotesEncoder)
 
+    def load_working(self, path: str, files: List) -> List[NoteInfo]:
+        """
+        Get the notes inside the specified path. If `files` are set it will check which of those paths match with
+        notes inside the index and the path
+        """
+        if not files:
+            return self.notes_in_path(path)
+        else:
+            abs_paths = map(os.path.abspath, files)
+            return [self.notes[f] for f in abs_paths if f in self.notes]
+
     @staticmethod
     def deserialize(encoded: str) -> NoteIndex:
         dict_data = json.loads(encoded, cls=MNotesDecoder)

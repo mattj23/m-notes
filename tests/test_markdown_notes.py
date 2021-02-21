@@ -118,7 +118,7 @@ def test_note_to_content_allows_missing_meta(mock_builder):
     file_content = note.to_file_text()
 
     state, meta, _ = _extract_yaml_front_matter(file_content)
-    assert {"author": "New Author", "created": None, "id": None, "title": None, "backlink": None} == meta
+    assert {"author": "New Author", "created": None, "id": None, "title": None} == meta
 
 
 def test_note_to_content_updates_id(mock_builder):
@@ -143,6 +143,36 @@ def test_note_to_content_updates_author(mock_builder):
     _, meta, _ = _extract_yaml_front_matter(note.to_file_text())
 
     assert "Author Person" == meta['author']
+
+
+def test_note_has_backlink_on(mock_builder):
+    note = mock_builder.load_note("/links_0.md")
+    assert note.info.has_backlink
+
+
+def test_note_has_backlink_off(mock_builder):
+    note = mock_builder.load_note("/ok.md")
+    assert not note.info.has_backlink
+
+
+def test_note_save_backlink_on(mock_builder):
+    note = mock_builder.load_note("/ok.md")
+    note.info.backlink = True
+    _, meta, _ = _extract_yaml_front_matter(note.to_file_text())
+
+    assert meta["backlink"]
+
+
+def test_note_save_backlink_off(mock_builder):
+    note = mock_builder.load_note("/links_0.md")
+    note.info.backlink = False
+    content = note.to_file_text()
+    _, meta, _ = _extract_yaml_front_matter(content)
+    meta["file_path"] = note.info.file_path
+
+    assert "backlink" not in content
+    assert "backlink" not in meta
+    assert not NoteInfo(**meta).has_backlink
 
 
 def test_note_to_content_updates_created(mock_builder):

@@ -42,7 +42,7 @@ class NoteInfo:
     state: MetaData = MetaData.UNKNOWN
     info: Optional[str] = None
     links_to: Optional[List[str]] = None
-    backlink: Optional[bool] = None
+    backlink: bool = False
 
     def to_dict(self) -> Dict:
         return asdict(self)
@@ -50,6 +50,11 @@ class NoteInfo:
     def rel_path(self, path: str) -> str:
         """ Display the path of this note relative to a given path """
         return os.path.relpath(self.file_path, start=path)
+
+    @property
+    def has_backlink(self):
+        """ Returns True if self.backlink is True, False otherwise (backlink might be None or False) """
+        return self.backlink == True
 
     @property
     def file_name(self):
@@ -82,8 +87,10 @@ class Note:
         for key in ("id", "title", "author", "created"):
             self.front_matter[key] = info_dict[key]
 
-        if "backlink" in info_dict:
-            self.front_matter["backlink"] = info_dict["backlink"]
+        if self.info.backlink:
+            self.front_matter["backlink"] = True
+        elif "backlink" in self.front_matter:
+            del self.front_matter["backlink"]
 
         with StringIO() as writer:
             writer.write("---\n")
@@ -158,6 +165,7 @@ class NoteBuilder:
                 "id": id_,
                 "title": meta_data.get("title", None),
                 "author": meta_data.get("author", None),
+                "backlink": meta_data.get("backlink", False)
             })
 
             # The parsing of the creation date is somewhat complicated and has the potential to fail
@@ -257,7 +265,7 @@ def _strip_mnote_section(content: str) -> str:
     lines = content.split("\n")
     searchable = list(enumerate(line.strip() for line in lines))
     for i, line in searchable[:-1]:
-        if line.startswith("---") and searchable[i+1][1].startswith("# M-Note"):
+        if line.startswith("---") and searchable[i + 1][1].startswith("# M-Note"):
             return "\n".join(lines[:i]) + "\n"
 
     return content

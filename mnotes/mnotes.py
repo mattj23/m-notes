@@ -10,6 +10,7 @@ from mnotes.environment import MnoteEnvironment, load_config, load_global_index_
 import mnotes.fix
 import mnotes.cmd_config
 import mnotes.cmd_index
+import mnotes.cmd_backlink
 
 
 mnote_version = pkg_resources.require("m-notes")[0].version
@@ -60,6 +61,6 @@ def mgo(ctx: click.core.Context, set_name: str):
 main.add_command(mnotes.cmd_config.config)
 main.add_command(mnotes.fix.main)
 main.add_command(mnotes.cmd_index.main)
-
+main.add_command(mnotes.cmd_backlink.main)
 
 
