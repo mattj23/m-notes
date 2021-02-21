@@ -7,7 +7,6 @@ import click
 from typing import List, Optional
 
 from .common import echo_problem_title, load_working
-from mnotes.notes.checks import note_checks
 from mnotes.environment import MnoteEnvironment, pass_env, echo_line
 
 

@@ -68,6 +68,18 @@ class TryChangeResult:
     change: Optional[NoteChange] = None
     message: Optional[List[List[str]]] = None
 
+    @property
+    def is_failed(self):
+        return self.result == TryChangeResult.Result.FAILED
+
+    @property
+    def is_nothing(self):
+        return self.result == TryChangeResult.Result.NOTHING_TO_DO
+
+    @property
+    def is_ok(self):
+        return self.result == TryChangeResult.Result.OK
+
     @staticmethod
     def failed(message: Optional[List[List[str]]] = None) -> TryChangeResult:
         return TryChangeResult(TryChangeResult.Result.FAILED, message=message)

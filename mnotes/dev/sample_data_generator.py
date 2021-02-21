@@ -151,6 +151,12 @@ def get_random_paragraph() -> str:
     return "  ".join(get_random_sentence() for i in range(random.randint(1, 5)))
 
 
+def random_timestamp() -> int:
+    start = int(DateTime(1990, 1, 1).timestamp())
+    end = int(DateTime(2025, 1, 1).timestamp())
+    return random.randint(start, end)
+
+
 def random_note() -> Dict:
     """ Creates a dictionary representing a valid, random note with an author, timestamp, title, ID, and text. Can be
     rendered to text using the render_note(...) function. """
@@ -276,14 +282,17 @@ def render_corpus(corpus: Dict) -> Dict:
         created: DateTime = note['created']
         backing[path] = {
             "content": render_note(note),
-            "modified": int(created.timestamp())
+            "modified": int(created.timestamp()) if created is not None else random_timestamp()
         }
     return backing
 
 
 if __name__ == '__main__':
-    corpus_ = make_corpus("/links", 5)
-    links = add_forward_links(corpus_, 0.5)
+    corpus_ = make_corpus("/fix", 5)
+    # links = add_forward_links(corpus_, 0.5)
+
+    # for k in corpus_:
+    #     corpus_[k] = remove_id(remove_created(corpus_[k]))
 
     backing = render_corpus(corpus_)
     print("DATA_SET_NAME = {")
@@ -291,4 +300,3 @@ if __name__ == '__main__':
         print(f"'{k}': {v},")
     print("}")
 
-    print(f"LINKS = {links}")

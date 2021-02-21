@@ -1,8 +1,8 @@
 import os
 import io
 import hashlib
-import pytest
-from typing import TextIO, Optional, Callable, List, Dict
+from datetime import datetime as DateTime
+from typing import TextIO, Optional, Callable, List, Dict, Tuple
 
 from mnotes.utility.file_system import FileSystemProvider, FileInfo
 
@@ -64,4 +64,6 @@ class TestFileSystemProvider(FileSystemProvider):
         sha = hashlib.sha1(self.internal[path]["content"].encode())
         return sha.hexdigest()
 
+    def file_c_time(self, file_path: str) -> Tuple[DateTime, bool]:
+        return DateTime.fromtimestamp(self.internal[file_path]['modified']), False
 

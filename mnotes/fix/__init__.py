@@ -5,7 +5,6 @@
 import time
 import click
 import sys
-from mnotes.notes.checks import note_checks
 from mnotes.environment import MnoteEnvironment, pass_env, echo_line
 
 from .fix_created import fix_created
