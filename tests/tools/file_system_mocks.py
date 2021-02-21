@@ -1,6 +1,7 @@
 import os
 import io
 import hashlib
+from copy import deepcopy
 from datetime import datetime as DateTime
 from typing import TextIO, Optional, Callable, List, Dict, Tuple
 
@@ -66,4 +67,8 @@ class TestFileSystemProvider(FileSystemProvider):
 
     def file_c_time(self, file_path: str) -> Tuple[DateTime, bool]:
         return DateTime.fromtimestamp(self.internal[file_path]['modified']), False
+
+    def move_file(self, source: str, dest: str):
+        self.internal[dest] = deepcopy(self.internal[source])
+        del self.internal[source]
 

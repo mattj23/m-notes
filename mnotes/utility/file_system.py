@@ -108,6 +108,8 @@ class FileSystem(FileSystemProvider):
         return sha.hexdigest()
 
     def move_file(self, source: str, dest: str):
+        if os.path.exists(dest):
+            raise FileExistsError(f"The file {dest} already exists! Aborting rather than overwrite")
         shutil.move(source, dest)
 
     def file_c_time(self, file_path: str) -> Tuple[DateTime, bool]:

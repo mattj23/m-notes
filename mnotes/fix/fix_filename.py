@@ -143,7 +143,7 @@ def fix_filename(env: MnoteEnvironment, files: List, n: Optional[int], complete:
 
 def prepend_id(note: NoteInfo) -> str:
     base_name, extension = os.path.splitext(note.file_name)
-    return f"{note.id}_{base_name.strip()}{extension}"
+    return f"{note.id}-{base_name.strip()}{extension}"
 
 
 def add_words_up_to(length: int, word_set: List[str]) -> List[str]:

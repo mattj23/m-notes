@@ -288,11 +288,13 @@ def render_corpus(corpus: Dict) -> Dict:
 
 
 if __name__ == '__main__':
-    corpus_ = make_corpus("/fix", 5)
+    corpus_ = make_corpus("/fix", 2)
     # links = add_forward_links(corpus_, 0.5)
 
     # for k in corpus_:
-    #     corpus_[k] = remove_id(remove_created(corpus_[k]))
+    #     corpus_[k] = remove_id(corpus_[k])
+    #
+    # corpus_["/fix/note-01.md"]['created'] = corpus_["/fix/note-00.md"]['created']
 
     backing = render_corpus(corpus_)
     print("DATA_SET_NAME = {")
