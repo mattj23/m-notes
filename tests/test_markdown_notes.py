@@ -6,8 +6,8 @@ import pytest
 import tests.tools.sample_data as sample
 from tests.tools.file_system_mocks import TestFileSystemProvider
 from datetime import datetime as DateTime
-from mnotes.notes.markdown_notes import NoteBuilder, MetaData, FailedMetadataException, _extract_yaml_front_matter, \
-    NoteInfo
+from mnotes.notes.markdown_notes import (NoteBuilder, MetaData, FailedMetadataException, _extract_yaml_front_matter,
+                                         NoteInfo, _strip_mnote_section)
 from dateutil import tz
 
 
@@ -118,7 +118,7 @@ def test_note_to_content_allows_missing_meta(mock_builder):
     file_content = note.to_file_text()
 
     state, meta, _ = _extract_yaml_front_matter(file_content)
-    assert {"author": "New Author", "created": None, "id": None, "title": None} == meta
+    assert {"author": "New Author", "created": None, "id": None, "title": None, "backlink": None} == meta
 
 
 def test_note_to_content_updates_id(mock_builder):
@@ -160,4 +160,4 @@ def test_ignores_mnote_section(mock_builder):
 
 This is some text in the sample note 1
 """
-    assert note.content == expected
+    assert _strip_mnote_section(note.content) == expected

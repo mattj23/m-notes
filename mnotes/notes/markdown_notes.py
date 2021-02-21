@@ -42,6 +42,7 @@ class NoteInfo:
     state: MetaData = MetaData.UNKNOWN
     info: Optional[str] = None
     links_to: Optional[List[str]] = None
+    backlink: Optional[bool] = None
 
     def to_dict(self) -> Dict:
         return asdict(self)
@@ -76,9 +77,13 @@ class Note:
 
         assert isinstance(self.front_matter, Dict)
 
+        # Copy certain keys from the NodeInfo object to the dictionary about to be written
         info_dict = self.info.to_dict()
         for key in ("id", "title", "author", "created"):
             self.front_matter[key] = info_dict[key]
+
+        if "backlink" in info_dict:
+            self.front_matter["backlink"] = info_dict["backlink"]
 
         with StringIO() as writer:
             writer.write("---\n")
@@ -207,7 +212,7 @@ def _extract_yaml_front_matter(content: str) -> Tuple[MetaData, Optional[Dict], 
     valid_tokens = ["...", "---"]
     lines = content.strip().split("\n")
     if lines[0].strip() not in valid_tokens:
-        return MetaData.MISSING, None, _strip_mnote_section(content)
+        return MetaData.MISSING, None, content
 
     front_matter_lines = []
     normal_lines = []
@@ -224,15 +229,15 @@ def _extract_yaml_front_matter(content: str) -> Tuple[MetaData, Optional[Dict], 
 
     # If we had the start of a front matter block but never ended it we return None
     if not is_complete:
-        return MetaData.FAILED, None, _strip_mnote_section(content)
+        return MetaData.FAILED, None, content
 
     normal_content = "\n".join(normal_lines)
 
     try:
         parsed = yaml.safe_load("\n".join(front_matter_lines))
-        return MetaData.UNKNOWN, parsed, _strip_mnote_section(normal_content)
+        return MetaData.UNKNOWN, parsed, normal_content
     except:
-        return MetaData.FAILED, None, _strip_mnote_section(content)
+        return MetaData.FAILED, None, content
 
 
 def _strip_mnote_section(content: str) -> str:
