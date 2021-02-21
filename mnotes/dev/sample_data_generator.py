@@ -252,6 +252,16 @@ def add_forward_links(corpus: Dict[str, Dict], prob: float) -> Dict[str, List[st
     return links
 
 
+def add_link_to(note: Dict, target_id: str):
+    # put a link to id_ in the note
+    start = note["content"].find("\n") + 1
+
+    words: List[str] = note["content"][start:].split(" ")
+    insert = random.randint(1, len(words) - 1)
+    words.insert(insert, f"[[{target_id}]]")
+    note["content"] = note["content"][:start] + " ".join(words)
+
+
 def make_corpus(path: str, count: int) -> Dict:
     corpus = {}
     for i in range(count):

@@ -93,6 +93,19 @@ class Note:
 
             return writer.getvalue()
 
+    def set_mnote_section(self, section_text: str):
+        """
+        Set the mnote section content at the end of the note.  If the note already has a section it will be replaced
+        with the new text, if it does not it will be added. The mnote indicator lines will be added automatically by
+        this method.
+        """
+        stripped_content = _strip_mnote_section(self.content)
+        if not stripped_content.endswith("\n"):
+            stripped_content += "\n"
+        stripped_content += "---\n# M-Note References\n*This section is automatically generated, any text placed in " \
+                            "or below it will be lost on the next update.*\n"
+        stripped_content += section_text
+
 
 class NoteBuilder:
     """ Factory class to load and save the note information from a FileSystemProvider """

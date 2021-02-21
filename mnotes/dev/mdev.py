@@ -7,7 +7,7 @@ import click
 import pkg_resources
 import random
 from .sample_data_generator import (render_note, random_note, remove_author, remove_title, remove_created, remove_id,
-                                    get_random_words, ALL_WORDS, conflicting_ids)
+                                    get_random_words, ALL_WORDS, conflicting_ids, add_link_to)
 
 mnote_version = pkg_resources.require("m-notes")[0].version
 
@@ -46,6 +46,26 @@ def sample(normal: int, author: int, created: int, ids: int, title: int, conflic
     if conflict is not None:
         notes = conflicting_ids(conflict)
         save_notes(notes)
+
+
+@main.command(name="linked")
+@click.option("-n", type=int, required=True, help="Number of notes to generate")
+@click.option("-l", type=int, required=True, help="Number of links to put in the corpus")
+def linked(n: int, l: int):
+    notes = [random_note() for i in range(n)]
+    link_count = 0
+
+    while link_count < l:
+        target = random.choice(notes)
+        source = random.choice(notes)
+        if target["id"] == source['id']:
+            continue
+
+        add_link_to(source, target["id"])
+        click.echo(f"Adding link to {target['id']} to note {source['id']}")
+        link_count += 1
+
+    save_notes(notes)
 
 
 def save_notes(notes: List[Dict]):

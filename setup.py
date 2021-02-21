@@ -28,7 +28,7 @@ setuptools.setup(
         "console_scripts": [
             "mnote=mnotes.mnotes:main",
             # "mgo=mnotes.mnotes:mgo",
-            # "mdev=mnotes.dev.mdev:main"
+            "mdev=mnotes.dev.mdev:main"
         ]
     }
 )
