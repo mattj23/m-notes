@@ -42,7 +42,7 @@ class NoteInfo:
     state: MetaData = MetaData.UNKNOWN
     info: Optional[str] = None
     links_to: Optional[List[str]] = None
-    backlink: bool = False
+    backlink: Optional[bool] = None
 
     def to_dict(self) -> Dict:
         return asdict(self)
@@ -165,7 +165,7 @@ class NoteBuilder:
                 "id": id_,
                 "title": meta_data.get("title", None),
                 "author": meta_data.get("author", None),
-                "backlink": meta_data.get("backlink", False)
+                "backlink": meta_data.get("backlink", None),
             })
 
             # The parsing of the creation date is somewhat complicated and has the potential to fail

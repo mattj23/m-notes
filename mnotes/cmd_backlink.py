@@ -58,8 +58,10 @@ def set_backlinks(env: MnoteEnvironment, on_off: click.Choice, files: List[click
     mode_text = style.success("ON") if mode else style.fail("OFF")
     echo_line(style.visible(str(mode)))
     changes = []
+    skip = 0
     for note in working:
         if note.has_backlink == mode:
+            skip += 1
             continue
         echo_line("Set backlinks ", mode_text, " for ", style.visible(note.file_name))
         changes.append(note)
@@ -68,6 +70,9 @@ def set_backlinks(env: MnoteEnvironment, on_off: click.Choice, files: List[click
     if not changes:
         echo_line(click.style(f"Checked {len(working)} notes and none needed to be changed", bold=True))
         return
+
+    if skip:
+        echo_line(f"There were {skip} files that were already set correctly")
 
     if click.confirm(click.style(f"Apply these {len(changes)} changes?", bold=True)):
         echo_line(style.success("User accepted changes"))
