@@ -174,10 +174,22 @@ def test_filename_check_true(check_fixture):
 
 def test_filename_check_false(check_fixture):
     provider, builder = check_fixture
-    note = builder.note_builder.load_note("/fix/note-19931114154205.md")
+    note = builder.note_builder.load_note("/fix/19931114154205-risus-libero-id.md")
     fixer = IdFixer(builder.note_builder, False)
 
     assert not fixer.check(note.info)
+
+
+def test_filename_nothing_to_do(transact_fixture):
+    provider, builder, master = transact_fixture
+    master.load_all()
+    transaction = master.create_empty_transaction()
+
+    note = builder.note_builder.load_note("/fix/19931114154205-risus-libero-id.md")
+    fixer = FilenameFixer(builder.note_builder, True)
+    result = fixer.try_change(note.info, transaction)
+
+    assert result.is_nothing
 
 
 def test_filename_simple_rename(transact_fixture):
