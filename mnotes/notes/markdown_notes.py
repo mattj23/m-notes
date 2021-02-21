@@ -106,7 +106,7 @@ class Note:
         with the new text, if it does not it will be added. The mnote indicator lines will be added automatically by
         this method.
         """
-        stripped_content = _strip_mnote_section(self.content)
+        stripped_content = _end_with_two_blank_lines(_strip_mnote_section(self.content))
         if not stripped_content.endswith("\n"):
             stripped_content += "\n"
         stripped_content += "---\n# M-Note References\n*This section is automatically generated, any text placed in " \
