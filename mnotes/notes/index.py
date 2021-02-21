@@ -147,6 +147,7 @@ class GlobalIndices:
         self.index_builder = index_builder
         self.by_id: Dict[str, NoteInfo] = {}
         self.all_ids: Set[str] = set()
+        self.by_path: Dict[str, NoteInfo] = {}
 
         # The cached field is for indices which were deserialized, and simply need to be updated
         self.cached: Dict[str, NoteIndex] = kwargs.get("cached", {})
@@ -159,11 +160,12 @@ class GlobalIndices:
         self.on_load: Callable[[GlobalIndices], None] = kwargs.get("on_load", None)
 
     def create_empty_transaction(self) -> ChangeTransaction:
-        empty = ChangeTransaction()
-        empty.ids.update(self.all_ids)
+        file_paths = []
         for index in self.indices.values():
-            empty.file_paths.update(index.files.keys())
+            file_paths += list(index.files.keys())
 
+        empty = ChangeTransaction(self.all_ids, file_paths,
+                                  lambda s: self.by_path[s] if s in self.by_path else None)
         return empty
 
     def find_conflicts(self, path: str) -> Dict[str, IndexConflict]:
@@ -253,6 +255,7 @@ class GlobalIndices:
             # from being detected. Instead we'll handle the original conflict after all of the indices have been
             # merged.
             for note in self.indices[name].notes.values():
+                self.by_path[note.file_path] = note
                 if note.id is not None:
                     self.all_ids.add(note.id)
                     if note.id in self.by_id:
