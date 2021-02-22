@@ -10,7 +10,7 @@ from typing import List, Optional
 from .common import echo_problem_title, load_working, Fixer
 from mnotes.environment import MnoteEnvironment, pass_env, echo_line, Styles
 from ..notes.markdown_notes import NoteInfo, NoteBuilder
-from ..utility.change import ChangeTransaction, TryChangeResult, NoteChange
+from ..utility.change import ChangeTransaction, TryChangeResult
 
 date_test_pattern = re.compile(r"^20[\d\.\-\_\s]*\d")
 valid_chars_pattern = re.compile(r"[^a-z0-9]")
@@ -57,8 +57,8 @@ class FilenameFixer(Fixer):
         change = NoteChange(note_info, self, data=proposed_path)
         return TryChangeResult.ok(change, desc)
 
-    def apply_change(self, change: NoteChange):
-        self.builder.provider.move_file(change.note_info.file_path, change.change_data)
+    # def apply_change(self, change: NoteChange):
+    #     self.builder.provider.move_file(change.note_info.file_path, change.change_data)
 
 
 @click.command(name="filename")

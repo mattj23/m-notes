@@ -6,7 +6,7 @@ from mnotes.environment import Styles
 from mnotes.notes.markdown_notes import NoteInfo, LONG_STAMP_PATTERN, ID_TIME_FORMAT, NoteBuilder
 from mnotes.notes.index import NoteIndex
 from typing import Optional, Tuple, List, Set, Callable
-from mnotes.utility.change import NoteChange, NoteChanger, ChangeTransaction, TryChangeResult
+from mnotes.utility.change import NoteChanger, ChangeTransaction, TryChangeResult
 
 from datetime import datetime as DateTime
 from datetime import timedelta as TimeDelta
@@ -77,16 +77,16 @@ class TitleFixer(Fixer):
         if header:
             title = header[0].strip()
             desc = [[" * header found in content ", self.vis(f"{title}")]]
-            change = NoteChange(note_info, self, data=title)
+            # change = NoteChange(note_info, self, data=title)
             return TryChangeResult.ok(change, desc)
         else:
             return TryChangeResult.failed([[" * ", self.warn("no header"), " found in context"]])
 
-    def apply_change(self, change: NoteChange):
-        note_with_content = self.builder.load_note(change.note_info.file_path)
-        note_with_content.info.title = change.change_data
-        with self.builder.provider.write_file(change.note_info.file_path) as handle:
-            handle.write(note_with_content.to_file_text())
+    # def apply_change(self, change: NoteChange):
+    #     note_with_content = self.builder.load_note(change.note_info.file_path)
+    #     note_with_content.info.title = change.change_data
+    #     with self.builder.provider.write_file(change.note_info.file_path) as handle:
+    #         handle.write(note_with_content.to_file_text())
 
 
 class AuthorFixer(Fixer):
@@ -101,15 +101,15 @@ class AuthorFixer(Fixer):
 
     def try_change(self, note_info: NoteInfo, transaction: ChangeTransaction) -> TryChangeResult:
         desc = [[" * will set author to ", self.vis(f"'{self.author}'")]]
-        change = NoteChange(note_info, self)
+        # change = NoteChange(note_info, self)
         return TryChangeResult.ok(change, desc)
 
-    def apply_change(self, change: NoteChange):
-        note_with_content = self.builder.load_note(change.note_info.file_path)
-        note_with_content.info.author = self.author
-        with self.builder.provider.write_file(change.note_info.file_path) as handle:
-            handle.write(note_with_content.to_file_text())
-
+    # def apply_change(self, change: NoteChange):
+    #     note_with_content = self.builder.load_note(change.note_info.file_path)
+    #     note_with_content.info.author = self.author
+    #     with self.builder.provider.write_file(change.note_info.file_path) as handle:
+    #         handle.write(note_with_content.to_file_text())
+    #
 
 class CreationFixer(Fixer):
     def __init__(self, builder: NoteBuilder, local_zone: tzinfo, style: Styles = None):
@@ -150,12 +150,12 @@ class CreationFixer(Fixer):
             change = NoteChange(note_info, self, data=c_time)
             return TryChangeResult.ok(change, desc)
 
-    def apply_change(self, change: NoteChange):
-        note_with_content = self.builder.load_note(change.note_info.file_path)
-        note_with_content.info.created = change.change_data
-        with self.builder.provider.write_file(change.note_info.file_path) as handle:
-            handle.write(note_with_content.to_file_text())
-
+    # def apply_change(self, change: NoteChange):
+    #     note_with_content = self.builder.load_note(change.note_info.file_path)
+    #     note_with_content.info.created = change.change_data
+    #     with self.builder.provider.write_file(change.note_info.file_path) as handle:
+    #         handle.write(note_with_content.to_file_text())
+    #
 
 class IdFixer(Fixer):
     def __init__(self, builder: NoteBuilder, resolve: bool, style: Styles = None):
@@ -201,11 +201,11 @@ class IdFixer(Fixer):
         change = NoteChange(note_info, self, new_id=new_id)
         return TryChangeResult.ok(change, desc)
 
-    def apply_change(self, change: NoteChange):
-        note_with_content = self.builder.load_note(change.note_info.file_path)
-        note_with_content.info.id = change.new_id
-        if change.change_data is not None:
-            note_with_content.info.created = change.change_data
-
-        with self.builder.provider.write_file(change.note_info.file_path) as handle:
-            handle.write(note_with_content.to_file_text())
+    # def apply_change(self, change: NoteChange):
+    #     note_with_content = self.builder.load_note(change.note_info.file_path)
+    #     note_with_content.info.id = change.new_id
+    #     if change.change_data is not None:
+    #         note_with_content.info.created = change.change_data
+    #
+    #     with self.builder.provider.write_file(change.note_info.file_path) as handle:
+    #         handle.write(note_with_content.to_file_text())

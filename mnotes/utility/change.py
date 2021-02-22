@@ -4,24 +4,26 @@
 from __future__ import annotations
 
 import abc
+from copy import deepcopy
 from enum import Enum
 from dataclasses import dataclass
 from typing import Callable, List, Set, Tuple, Optional, Dict
 from mnotes.notes.markdown_notes import NoteInfo, Note
 
 
-class NoteChange:
-    def __init__(self, note_info: NoteInfo, changer: NoteChanger, **kwargs):
-        self.note_info = note_info
-        self.new_file_path: Optional[str] = kwargs.get("file_path", None)
-        self.new_id: Optional[str] = kwargs.get("new_id", None)
-
-        self.change_data = kwargs.get("data", None)
-        self.change_maker = changer
-
-    def apply(self) -> Note:
-        return self.change_maker.apply_change(self)
-
+# class NoteChange:
+#     def __init__(self, original_path: str, updated_note: Note):
+#         self.
+#         self.note_info = note_info
+#         self.new_file_path: Optional[str] = kwargs.get("file_path", None)
+#         self.new_id: Optional[str] = kwargs.get("new_id", None)
+#
+#         self.change_data = kwargs.get("data", None)
+#         self.change_maker = changer
+#
+#     def apply(self) -> Note:
+#         return self.change_maker.apply_change(self)
+#
 
 class ChangeTransaction:
     """
@@ -31,9 +33,10 @@ class ChangeTransaction:
     specific change may alter the same note.
     """
 
-    def __init__(self, ids: Set[str], paths: List[str], get_by_file: Callable[[str], Optional[Note]]):
-        self.changes: List[NoteChange] = []
-        self.getter = get_by_file
+    def __init__(self, ids: Set[str], paths: List[str], get_note_by_file: Callable[[str], Optional[Note]],
+                 get_note_info_by_file: Callable[[str], Optional[NoteInfo]]):
+        self._get_note_from_index = get_note_by_file
+        self._get_note_info_from_index = get_note_info_by_file
 
         # Note data mapped to the *original* file path that the note was at. If the note data is None, it means the
         # transaction doesn't affect this note
@@ -55,19 +58,32 @@ class ChangeTransaction:
         # TODO: this can probably be cached when updated
         return path in set(self.file_moves.values())
 
-    def verify(self, change: NoteChange) -> bool:
+    def verify(self, original_path: str, update: Note) -> bool:
+        original = self.get_note_info_state(original_path)
+
         # Verify that the ID does not collide
-        if change.new_id is not None:
-            if change.new_id in self.ids:
+        if original.id != update.info.id:
+            if update.info.id in self.ids:
                 return False
 
         # Verify that the file path does not collide
-        if change.new_file_path is not None and self._path_conflict(change.new_file_path):
+        if (original.file_path != update.info.file_path) and self._path_conflict(update.info.file_path):
             return False
 
         return True
 
-    def get_note_state(self, original_path: str) -> Note:
+    def get_note_info_state(self, original_path: str) -> Optional[NoteInfo]:
+        """ Get the note information """
+        if original_path not in self.by_path:
+            raise KeyError(f"File {original_path} was not found as a known file in the index")
+
+        if self.by_path[original_path] is None:
+            # This is the first time we're touching this file in the transaction
+            return deepcopy(self._get_note_info_from_index(original_path))
+
+        return deepcopy(self.by_path[original_path].info)
+
+    def get_note_state(self, original_path: str) -> Optional[Note]:
         """
         Get the state of a note at this particular stage in the transaction. We'll refer to the note by the original
         filename before any renames occur.
@@ -77,28 +93,28 @@ class ChangeTransaction:
 
         if self.by_path[original_path] is None:
             # This is the first time we're touching this file in the transaction
-            return self.getter(original_path)
+            return deepcopy(self._get_note_from_index(original_path))
 
-        return self.by_path[original_path]
+        return deepcopy(self.by_path[original_path])
 
-    def add_change(self, change: NoteChange):
-        if not self.verify(change):
+    def add_change(self, original_path: str, update: Note):
+        if not self.verify(original_path, update):
             raise ValueError("This change conflicts, make sure to use verify before trying to apply a change to a "
                              "transaction.")
 
-        if change.new_id is not None:
-            if change.note_info.id in self.ids:
-                self.ids.remove(change.note_info.id)
-            self.ids.add(change.new_id)
+        original = self.get_note_info_state(original_path)
 
-        if change.new_file_path is not None:
-            self.file_moves[change.note_info.file_path] = change.new_file_path
+        # Verify that the ID does not collide
+        if original.id != update.info.id:
+            if original.id in self.ids:
+                self.ids.remove(original.id)
+            self.ids.add(update.info.id)
 
-        self.changes.append(change)
-        self.by_path[change.note_info.file_path] = change.apply()
+        # Verify that the file path does not collide
+        if original.file_path != update.info.file_path:
+            self.file_moves[original_path] = update.info.file_path
 
-    def apply(self):
-        pass
+        self.by_path[original_path] = update
 
 
 @dataclass
@@ -109,7 +125,7 @@ class TryChangeResult:
         OK = 2
 
     result: Result
-    change: Optional[NoteChange] = None
+    change: Optional[Note]
     message: Optional[List[List[str]]] = None
 
     @property
@@ -129,8 +145,8 @@ class TryChangeResult:
         return TryChangeResult(TryChangeResult.Result.FAILED, message=message)
 
     @staticmethod
-    def ok(change: NoteChange, message: Optional[List[List[str]]] = None) -> TryChangeResult:
-        return TryChangeResult(TryChangeResult.Result.OK, change=change, message=message)
+    def ok(updated: Note, message: Optional[List[List[str]]] = None) -> TryChangeResult:
+        return TryChangeResult(TryChangeResult.Result.OK, change=updated, message=message)
 
     @staticmethod
     def nothing(message: Optional[List[List[str]]] = None) -> TryChangeResult:
@@ -141,7 +157,7 @@ class NoteChanger(abc.ABC):
     """ Abstract base class encapsulating a thing that makes a change to a note in the context of the global
     index of all notes """
 
-    def try_change(self, note_info: NoteInfo, transaction: ChangeTransaction) -> TryChangeResult:
+    def try_change(self, original_path: str, transaction: ChangeTransaction) -> TryChangeResult:
         pass
 
     def apply_change(self, change: NoteChange) -> Note:
