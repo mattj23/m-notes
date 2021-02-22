@@ -7,7 +7,7 @@ from typing import List, Optional, Set, Callable
 from datetime import datetime as DateTime
 from datetime import timedelta as TimeDelta
 
-from .common import echo_problem_title, load_working
+from .common import echo_problem_title
 
 from mnotes.environment import MnoteEnvironment, pass_env, echo_line
 from ..notes.markdown_notes import NoteInfo, ID_TIME_FORMAT

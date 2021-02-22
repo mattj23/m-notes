@@ -5,7 +5,7 @@ import re
 import click
 from typing import List, Optional
 
-from .common import echo_problem_title, load_working
+from .common import echo_problem_title
 from mnotes.environment import MnoteEnvironment, pass_env, echo_line
 
 header_pattern = re.compile("^# (.*)")

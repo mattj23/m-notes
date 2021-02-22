@@ -1,9 +1,9 @@
 from copy import deepcopy
-from typing import Dict
+from dataclasses import dataclass
+from typing import Dict, Tuple
 
 import pytest
 import tests.tools.sample_data as sample
-from mnotes.fix.fix_filename import FilenameFixer
 from mnotes.notes.index import IndexBuilder, GlobalIndices
 from mnotes.notes.markdown_notes import NoteBuilder, NoteInfo
 from mnotes.utility.change import ChangeTransaction
@@ -15,27 +15,27 @@ from tests.tools.file_system_mocks import TestFileSystemProvider
 from datetime import datetime as DateTime
 
 
-def _pre_build():
+@dataclass
+class Fixture:
+    index_builder: IndexBuilder
+    provider: TestFileSystemProvider
+    master: GlobalIndices
+    transact: ChangeTransaction
+
+
+@pytest.fixture
+def fixture() -> Fixture:
     d1 = deepcopy(sample.INDEX_FOR_FIXERS)
     d2 = deepcopy(sample.INDEX_WITH_MISSING_ATTRS)
     d1.update(d2)
     provider = TestFileSystemProvider(d1)
     note_builder = NoteBuilder(provider, local_tz)
     index_builder = IndexBuilder(provider, note_builder)
-    return provider, index_builder
-
-
-@pytest.fixture
-def check_fixture():
-    return _pre_build()
-
-
-@pytest.fixture
-def transact_fixture():
-    provider, index_builder = _pre_build()
     directory = {"alpha": {"path": "/alpha"}, "fix": {"path": "/fix"}}
     master = GlobalIndices(index_builder, directory=directory)
-    return provider, index_builder, master
+    master.load_all()
+    transact = master.create_empty_transaction()
+    return Fixture(index_builder, provider, master, transact)
 
 
 def but_for(d: NoteInfo, key: str) -> Dict:
@@ -47,59 +47,57 @@ def but_for(d: NoteInfo, key: str) -> Dict:
     return d2
 
 
-def test_created_check_false(check_fixture):
-    provider, builder = check_fixture
-    note = builder.note_builder.load_note("/alpha/note-00.md")
-    fixer = CreationFixer(builder.note_builder, local_zone=local_tz)
+def test_created_check_false(fixture):
+    note = fixture.master.get_note_info("/alpha/note-00.md")
+    fixer = CreationFixer(fixture.index_builder.note_builder, local_zone=local_tz)
 
-    assert not fixer.check(note.info)
-
-
-def test_created_check_true(check_fixture):
-    provider, builder = check_fixture
-    note = builder.note_builder.load_note("/alpha/missing-created.md")
-    fixer = CreationFixer(builder.note_builder, local_zone=local_tz)
-
-    assert fixer.check(note.info)
+    assert not fixer.check(note)
 
 
-def test_created_invalid_parse_long_stamp(check_fixture):
-    provider, builder = check_fixture
-    note = builder.note_builder.load_note("/fix/timestamp-wrong-20130434025112.md")
-    fixer = CreationFixer(builder.note_builder, local_zone=local_tz)
-    result = fixer.try_change(note.info, ChangeTransaction())
+def test_created_check_true(fixture):
+    note = fixture.master.get_note_info("/alpha/missing-created.md")
+    fixer = CreationFixer(fixture.index_builder.note_builder, local_zone=local_tz)
+
+    assert fixer.check(note)
+
+
+def test_created_invalid_parse_long_stamp(fixture):
+    fixer = CreationFixer(fixture.index_builder.note_builder, local_zone=local_tz)
+    result = fixer.try_change("/fix/timestamp-wrong-20130434025112.md", fixture.transact)
 
     assert result.is_failed
 
 
-def test_created_got_long_stamp(check_fixture):
-    provider, builder = check_fixture
-    note = builder.note_builder.load_note("/fix/timestamp-legit-20031117110124.md")
-    fixer = CreationFixer(builder.note_builder, local_zone=local_tz)
-    result = fixer.try_change(note.info, ChangeTransaction())
+def test_created_got_long_stamp(fixture):
+    file = "/fix/timestamp-legit-20031117110124.md"
+    copy = deepcopy(fixture.master.get_note(file))
+    fixer = CreationFixer(fixture.index_builder.note_builder, local_zone=local_tz)
+    result = fixer.try_change(file, fixture.transact)
+    fixture.transact.add_change(file, result.change)
+    fixture.master.apply_transaction(fixture.transact)
 
-    result.change.change_maker.apply_change(result.change)  # convoluted, but to ensure that it's stand-alone
-    note2 = builder.note_builder.load_note("/fix/timestamp-legit-20031117110124.md")
+    note2 = fixture.index_builder.note_builder.load_note(file)
 
     assert result.is_ok
     assert note2.info.created.strftime(ID_TIME_FORMAT) == "20031117110124"
-    assert but_for(note.info, "created") == but_for(note2.info, "created")
-    assert note.content == note2.content
+    assert but_for(copy.info, "created") == but_for(note2.info, "created")
+    assert copy.content == note2.content
 
 
-def test_created_read_file_time(check_fixture):
-    provider, builder = check_fixture
-    note = builder.note_builder.load_note("/fix/timestamp-none.md")
-    fixer = CreationFixer(builder.note_builder, local_zone=local_tz)
-    result = fixer.try_change(note.info, ChangeTransaction())
+def test_created_read_file_time(fixture):
+    file = "/fix/timestamp-none.md"
+    copy = deepcopy(fixture.master.get_note(file))
+    fixer = CreationFixer(fixture.index_builder.note_builder, local_zone=local_tz)
+    result = fixer.try_change(file, fixture.transact)
+    fixture.transact.add_change(file, result.change)
+    fixture.master.apply_transaction(fixture.transact)
 
-    result.change.change_maker.apply_change(result.change)  # convoluted, but to ensure that it's stand-alone
-    note2 = builder.note_builder.load_note("/fix/timestamp-none.md")
+    note2 = fixture.index_builder.note_builder.load_note(file)
 
     assert result.is_ok
     assert note2.info.created == DateTime(2015, 4, 30, 17, 49, 27, tzinfo=local_tz)
-    assert but_for(note.info, "created") == but_for(note2.info, "created")
-    assert note.content == note2.content
+    assert but_for(copy.info, "created") == but_for(note2.info, "created")
+    assert copy.content == note2.content
 
 
 def test_id_check_true(check_fixture):

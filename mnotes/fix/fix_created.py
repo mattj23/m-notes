@@ -5,7 +5,7 @@ import click
 from typing import List, Optional
 from datetime import datetime as DateTime
 
-from .common import echo_problem_title, load_working
+from .common import echo_problem_title
 from mnotes.notes.markdown_notes import ID_TIME_FORMAT
 from mnotes.environment import MnoteEnvironment, pass_env, echo_line
 

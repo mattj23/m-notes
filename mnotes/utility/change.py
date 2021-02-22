@@ -11,20 +11,6 @@ from typing import Callable, List, Set, Tuple, Optional, Dict
 from mnotes.notes.markdown_notes import NoteInfo, Note
 
 
-# class NoteChange:
-#     def __init__(self, original_path: str, updated_note: Note):
-#         self.
-#         self.note_info = note_info
-#         self.new_file_path: Optional[str] = kwargs.get("file_path", None)
-#         self.new_id: Optional[str] = kwargs.get("new_id", None)
-#
-#         self.change_data = kwargs.get("data", None)
-#         self.change_maker = changer
-#
-#     def apply(self) -> Note:
-#         return self.change_maker.apply_change(self)
-#
-
 class ChangeTransaction:
     """
     The ChangeTransaction is an entirely in-memory representation of a set of changes to a global corpus of notes. It
@@ -125,7 +111,7 @@ class TryChangeResult:
         OK = 2
 
     result: Result
-    change: Optional[Note]
+    change: Optional[Note] = None
     message: Optional[List[List[str]]] = None
 
     @property
@@ -160,5 +146,3 @@ class NoteChanger(abc.ABC):
     def try_change(self, original_path: str, transaction: ChangeTransaction) -> TryChangeResult:
         pass
 
-    def apply_change(self, change: NoteChange) -> Note:
-        pass

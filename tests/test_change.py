@@ -3,10 +3,25 @@ from typing import Dict
 
 import pytest
 from datetime import datetime as DateTime
-from mnotes.notes.markdown_notes import Note, ID_TIME_FORMAT
-from mnotes.utility.file_system import FileSystemProvider
-from tests.test_fixes import transact_fixture, local_tz
+
+from mnotes.notes.index import IndexBuilder, GlobalIndices
+from mnotes.notes.markdown_notes import Note, ID_TIME_FORMAT, NoteBuilder
 from tests.tools.file_system_mocks import TestFileSystemProvider
+from tests.test_index import local_tz
+import tests.tools.sample_data as sample
+
+
+@pytest.fixture
+def transact_fixture():
+    d1 = deepcopy(sample.INDEX_FOR_FIXERS)
+    d2 = deepcopy(sample.INDEX_WITH_MISSING_ATTRS)
+    d1.update(d2)
+    provider = TestFileSystemProvider(d1)
+    note_builder = NoteBuilder(provider, local_tz)
+    index_builder = IndexBuilder(provider, note_builder)
+    directory = {"alpha": {"path": "/alpha"}, "fix": {"path": "/fix"}}
+    master = GlobalIndices(index_builder, directory=directory)
+    return provider, index_builder, master
 
 
 def but_for(provider: TestFileSystemProvider, *args) -> Dict:
@@ -164,4 +179,3 @@ def test_hetrogenous_transaction_with_move(transact_fixture):
     assert master.by_path[fr].id == "20150430174927"
     assert master.by_path[fr].created == DateTime(2015, 4, 30, 17, 49, 27)
     assert but_for(copy, f0, f1) == but_for(provider, f1, fr)
-
