@@ -53,6 +53,22 @@ def clear_terminal(env: MnoteEnvironment, on_off: click.Choice):
         echo_line("Clear terminal on run was turned ", style.fail("OFF"))
 
 
+@config.command(name="filename-complete")
+@click.argument("on_off", type=click.Choice(["on", "off"], case_sensitive=False))
+@pass_env
+def filename_complete(env: MnoteEnvironment, on_off: click.Choice):
+    """ Set the option to use the --complete flag by default on filename operations """
+    style = env.config.styles
+    env.config.filename_complete = on_off == "on"
+    env.config.write()
+
+    echo_line()
+    if env.config.filename_complete:
+        echo_line("Default '--complete' flag for filename ", style.success("ON"))
+    else:
+        echo_line("Default '--complete' flag for filename ", style.fail("OFF"))
+
+
 @config.command(name="style")
 @click.option("--colors", flag_value=True, help="Show the colors by name on your terminal")
 @click.option("--fg", type=str, default=None, help="Set the foreground color")

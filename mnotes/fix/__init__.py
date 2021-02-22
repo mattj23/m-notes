@@ -3,18 +3,15 @@
 """
 import os
 import time
-from typing import List, Optional
+from typing import List, Optional, Callable
 
 import click
 import sys
 from mnotes.environment import MnoteEnvironment, pass_env, echo_line
 
 from .common import CreationFixer, AuthorFixer, TitleFixer, FilenameFixer, IdFixer, Fixer
-from .fix_created import fix_created
-from .fix_author import fix_author
-from .fix_title import fix_title
-from .fix_filename import fix_filename
-from .fix_ids import fix_id
+from ..notes.markdown_notes import NoteInfo
+from ..utility.change import ChangeTransaction
 
 
 @click.group(name="fix", invoke_without_command=True)
@@ -80,7 +77,7 @@ def main(env: MnoteEnvironment, ctx: click.core.Context, n: int):
 @pass_env
 def fix_created(env: MnoteEnvironment, files: List, n: Optional[int]):
     fixer = CreationFixer(env.note_builder, env.local_tz, env.config.styles)
-    process_fixes(fixer, env, files, n)
+    process_fixes(single_core(fixer, n, False, env), env, files)
 
 
 @main.command(name="id")
@@ -91,7 +88,7 @@ def fix_created(env: MnoteEnvironment, files: List, n: Optional[int]):
 @pass_env
 def fix_id(env: MnoteEnvironment, files: List[click.Path], n: Optional[int], resolve: bool):
     fixer = IdFixer(env.note_builder, resolve, env.config.styles)
-    process_fixes(fixer, env, files, n)
+    process_fixes(single_core(fixer, n, False, env), env, files)
 
 
 @main.command(name="filename")
@@ -103,8 +100,9 @@ def fix_id(env: MnoteEnvironment, files: List[click.Path], n: Optional[int], res
               help="Run the rename on all notes specified (use with --complete)")
 @pass_env
 def fix_filename(env: MnoteEnvironment, files: List, n: Optional[int], complete: bool, force: bool):
+    complete = complete or env.config.filename_complete
     fixer = FilenameFixer(env.note_builder, complete, env.config.styles)
-    process_fixes(fixer, env, files, n, complete and force)
+    process_fixes(single_core(fixer, n, complete and force, env), env, files)
 
 
 @main.command(name="author")
@@ -114,7 +112,7 @@ def fix_filename(env: MnoteEnvironment, files: List, n: Optional[int], complete:
 @pass_env
 def fix_author(env: MnoteEnvironment, n: Optional[int], author: Optional[str], files: List):
     fixer = AuthorFixer(env.note_builder, author if author else env.config.author, env.config.styles)
-    process_fixes(fixer, env, files, n)
+    process_fixes(single_core(fixer, n, False, env), env, files)
 
 
 @main.command(name="title")
@@ -123,10 +121,109 @@ def fix_author(env: MnoteEnvironment, n: Optional[int], author: Optional[str], f
 @pass_env
 def fix_title(env: MnoteEnvironment, files: List[click.Path], n: Optional[int]):
     fixer = TitleFixer(env.note_builder, env.config.styles)
-    process_fixes(fixer, env, files, n)
+    process_fixes(single_core(fixer, n, False, env), env, files)
 
 
-def process_fixes(fixer: Fixer, env: MnoteEnvironment, files: List, n: Optional[int], override_check: bool = False):
+@main.command(name="all")
+@click.argument("files", nargs=-1, type=click.Path())
+@click.option("-n", default=None, type=int, help="Max number of fixes to perform")
+@click.option("--complete", "complete", flag_value=True,
+              help="Completely rewrite the filename from the title information")
+@pass_env
+def fix_all(env: MnoteEnvironment, files: List, n: Optional[int], complete: bool):
+    """ Equivalent to fixing created, id, title, filename, author in sequence.
+
+    This is a highly automated command that performs a sequence of fixes. It's not safe to run on large batches of
+    notes at a time so it will only allow up to 5 notes to be run at once.
+
+    The --complete flag will rewrite the filename the same as running `mnote fix filename --complete`
+    """
+    complete = complete or env.config.filename_complete
+    style = env.config.styles
+
+    if n is None or n > 5:
+        echo_line()
+        echo_line(style.warning("This command is limited to processing five notes at a time."))
+        n = 5
+
+    def core(working: List[NoteInfo], transaction: ChangeTransaction) -> int:
+        pipeline = [
+            CreationFixer(env.note_builder, env.local_tz, env.config.styles),
+            IdFixer(env.note_builder, True, env.config.styles),
+            AuthorFixer(env.note_builder, env.config.author, env.config.styles),
+            TitleFixer(env.note_builder, env.config.styles),
+            FilenameFixer(env.note_builder, complete, env.config.styles)
+        ]
+
+        changes = 0
+        for note in working:
+            if changes >= n:
+                break
+
+            has_change = False
+
+            for fixer in pipeline:
+                if fixer.check(note):
+                    if not has_change:
+                        # This should be the first printing of the note. It's structured like this so that the
+                        # note will never be printed unless it has something wrong with it any stage of the
+                        # pipeline
+                        rel_path = os.path.relpath(note.file_path, env.cwd)
+                        title = note.title if note.title else rel_path
+                        echo_line()
+                        echo_line(click.style("Fix All For: ", bold=True), click.style(f"{title}", underline=True))
+                        echo_line(f" * filename: {rel_path}")
+                        has_change = True
+
+                    result = fixer.try_change(note.file_path, transaction)
+
+                    echo_line(" * note is ", style.warning(fixer.description))
+                    for line in result.message:
+                        echo_line(*line)
+
+                    if result.is_ok:
+                        transaction.add_change(note.file_path, result.change)
+
+            if has_change:
+                changes += 1
+        return changes
+
+    process_fixes(core, env, files)
+
+
+def single_core(fixer: Fixer, n: Optional[int], override_check: bool, env: MnoteEnvironment) -> Callable[
+    [List[NoteInfo], ChangeTransaction], int]:
+    """ Returns a curried function that performs a single fixer run for the central core to the process_fixes
+    function. """
+
+    def curried(working: List[NoteInfo], transaction: ChangeTransaction) -> int:
+        changes = 0
+        for note in working:
+            if n is not None and changes >= n:
+                break
+
+            if fixer.check(note) or override_check:
+                echo_line()
+                desc = fixer.description[0].upper() + fixer.description[1:]
+                rel_path = os.path.relpath(note.file_path, env.cwd)
+                title = note.title if note.title else rel_path
+                echo_line(click.style(f"{desc}: ", bold=True), click.style(f"{title}", underline=True))
+                echo_line(f" * filename: {rel_path}")
+
+                result = fixer.try_change(note.file_path, transaction)
+
+                for line in result.message:
+                    echo_line(*line)
+
+                if result.is_ok:
+                    transaction.add_change(note.file_path, result.change)
+                    changes += 1
+        return changes
+
+    return curried
+
+
+def process_fixes(core: Callable[[List[NoteInfo], ChangeTransaction], int], env: MnoteEnvironment, files: List):
     style = env.config.styles
     # Index is guaranteed to have a value, as if it didn't we would have exited on the main command
     index = env.index_of_cwd
@@ -136,28 +233,7 @@ def process_fixes(fixer: Fixer, env: MnoteEnvironment, files: List, n: Optional[
         echo_line(style.warning("No files to work on after checking the current directory against the index."))
 
     transaction = env.global_index.create_empty_transaction()
-    changes = 0
-
-    for note in working:
-        if n is not None and changes >= n:
-            break
-
-        if fixer.check(note) or override_check:
-            echo_line()
-            desc = fixer.description[0].upper() + fixer.description[1:]
-            rel_path = os.path.relpath(note.file_path, env.cwd)
-            title = note.title if note.title else rel_path
-            echo_line(click.style(f"{desc}: ", bold=True), click.style(f"{title}", underline=True))
-            echo_line(f" * filename: {rel_path}")
-
-            result = fixer.try_change(note.file_path, transaction)
-
-            for line in result.message:
-                echo_line(*line)
-
-            if result.is_ok:
-                transaction.add_change(note.file_path, result.change)
-                changes += 1
+    changes = core(working, transaction)
 
     echo_line()
     if changes == 0:

@@ -17,12 +17,6 @@ valid_chars_pattern = re.compile(r"[^a-z0-9]")
 delete_words = {"on", "to", "the", "of", "and", "is", "at", "a", "an", "for", "in"}
 
 
-def echo_problem_title(issue: str, note: NoteInfo):
-    click.echo()
-    click.echo(click.style(f"{issue}: ", bold=True), nl=False)
-    click.echo(click.style(f"{note.title}", underline=True))
-    click.echo(f" * filename = {note.file_name}")
-
 
 class Fixer(NoteChanger):
     def __init__(self, builder: NoteBuilder, style: Styles = None):
