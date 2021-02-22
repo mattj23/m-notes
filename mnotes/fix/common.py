@@ -183,9 +183,9 @@ class IdFixer(Fixer):
 
 
 class FilenameFixer(Fixer):
-    def __init__(self, builder: NoteBuilder, resolve: bool, style: Styles = None):
+    def __init__(self, builder: NoteBuilder, complete: bool, style: Styles = None):
         super().__init__(builder, style)
-        self.complete = resolve
+        self.complete = complete
         self.description = "missing an id in the filename"
         self.hint = "try the 'mnote fix title' command"
 

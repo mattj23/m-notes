@@ -4,6 +4,8 @@ import shutil
 import click
 import yaml
 from dataclasses import dataclass
+from dateutil.tz import tzlocal
+from datetime import tzinfo
 from typing import Optional, Dict, Tuple, List
 from mnotes.notes.index import GlobalIndices, NoteIndex
 from mnotes.notes.markdown_notes import NoteBuilder
@@ -98,12 +100,13 @@ class Config:
 
 class MnoteEnvironment:
     def __init__(self, config: Config, global_index: GlobalIndices, note_builder: NoteBuilder,
-                 provider: FileSystemProvider):
+                 provider: FileSystemProvider, local_tz: tzinfo):
         self.cwd = os.path.abspath(os.getcwd())
         self.config: Config = config
         self.global_index: GlobalIndices = global_index
         self.note_builder: NoteBuilder = note_builder
         self.provider: FileSystemProvider = provider
+        self.local_tz: tzinfo = local_tz
 
     def print(self):
         click.echo(f" * current directory: {self.cwd}")
