@@ -5,9 +5,11 @@
 from __future__ import annotations
 
 import os
+import shutil
 import abc
+from datetime import datetime as DateTime
 from dataclasses import dataclass, asdict
-from typing import List, Optional, Callable, Dict, TextIO
+from typing import List, Optional, Callable, Dict, TextIO, Tuple
 import hashlib
 
 
@@ -66,6 +68,12 @@ class FileSystemProvider(abc.ABC):
     def checksum(self, path: str) -> str:
         pass
 
+    def move_file(self, source: str, dest: str):
+        pass
+
+    def file_c_time(self, file_path: str) -> Tuple[DateTime, bool]:
+        pass
+
 
 class FileSystem(FileSystemProvider):
     """ Concrete implementation of a cross-platform FileSystemProvider based on Python's os and shutil module. """
@@ -98,3 +106,22 @@ class FileSystem(FileSystemProvider):
                     break
                 sha.update(data)
         return sha.hexdigest()
+
+    def move_file(self, source: str, dest: str):
+        if os.path.exists(dest):
+            raise FileExistsError(f"The file {dest} already exists! Aborting rather than overwrite")
+        shutil.move(source, dest)
+
+    def file_c_time(self, file_path: str) -> Tuple[DateTime, bool]:
+        """
+        Get the file creation time from the operating system. This will not return good results on Linux
+        :param file_path:
+        :return: a datetime and a bool indicating whether it was the creation time or modification time returned
+        """
+        f_stat = os.stat(file_path)
+        try:
+            c_time = DateTime.fromtimestamp(f_stat.st_birthtime)
+            return c_time, True
+        except AttributeError:
+            c_time = DateTime.fromtimestamp(f_stat.st_mtime)
+        return c_time, False

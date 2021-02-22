@@ -4,6 +4,8 @@ import shutil
 import click
 import yaml
 from dataclasses import dataclass
+from dateutil.tz import tzlocal
+from datetime import tzinfo
 from typing import Optional, Dict, Tuple, List
 from mnotes.notes.index import GlobalIndices, NoteIndex
 from mnotes.notes.markdown_notes import NoteBuilder
@@ -78,17 +80,20 @@ class Config:
         style_config: Dict = kwargs.get("styles", {})
         self.styles = Styles(**style_config)
         self.clear_on_run: bool = kwargs.get("clear_on_run", False)
+        self.filename_complete: bool = kwargs.get("filename_complete", False)
 
     def print(self):
         click.echo(f" * active config file: {self.file}")
         click.echo(f" * default author: {self.author}")
         click.echo(f" * clear terminal on run: {self.clear_on_run}")
+        click.echo(f" * default --complete flag for filenames: {self.filename_complete}")
 
     def write(self):
         data = {
             "author": self.author,
             "styles": self.styles.to_serializable(),
-            "clear_on_run": self.clear_on_run
+            "clear_on_run": self.clear_on_run,
+            "filename_complete": self.filename_complete
         }
         if os.path.exists(self.file):
             shutil.copy(self.file, self.file + ".back")
@@ -98,12 +103,13 @@ class Config:
 
 class MnoteEnvironment:
     def __init__(self, config: Config, global_index: GlobalIndices, note_builder: NoteBuilder,
-                 provider: FileSystemProvider):
+                 provider: FileSystemProvider, local_tz: tzinfo):
         self.cwd = os.path.abspath(os.getcwd())
         self.config: Config = config
         self.global_index: GlobalIndices = global_index
         self.note_builder: NoteBuilder = note_builder
         self.provider: FileSystemProvider = provider
+        self.local_tz: tzinfo = local_tz
 
     def print(self):
         click.echo(f" * current directory: {self.cwd}")

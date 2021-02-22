@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import json
 import os
-from typing import List, Dict, Set, Callable
+from typing import List, Dict, Set, Callable, Optional
 from dataclasses import dataclass
 from mnotes.utility.file_system import FileInfo, FileSystemProvider
 
-from .markdown_notes import NoteInfo, NoteBuilder, MetaData
+from .markdown_notes import NoteInfo, NoteBuilder, MetaData, Note
+from ..utility.change import ChangeTransaction
 from ..utility.json_encoder import MNotesEncoder, MNotesDecoder
 
 
@@ -146,6 +147,7 @@ class GlobalIndices:
         self.index_builder = index_builder
         self.by_id: Dict[str, NoteInfo] = {}
         self.all_ids: Set[str] = set()
+        self.by_path: Dict[str, NoteInfo] = {}
 
         # The cached field is for indices which were deserialized, and simply need to be updated
         self.cached: Dict[str, NoteIndex] = kwargs.get("cached", {})
@@ -156,6 +158,31 @@ class GlobalIndices:
 
         # Callback to run after loading has finished
         self.on_load: Callable[[GlobalIndices], None] = kwargs.get("on_load", None)
+
+    def get_note_info(self, path: str) -> Optional[NoteInfo]:
+        return self.by_path[path] if path in self.by_path else None
+
+    def get_note(self, path: str) -> Optional[Note]:
+        if path in self.by_path:
+            return self.index_builder.note_builder.load_note(path)
+        return None
+
+    def create_empty_transaction(self) -> ChangeTransaction:
+        file_paths = []
+        for index in self.indices.values():
+            file_paths += list(index.files.keys())
+
+        empty = ChangeTransaction(self.all_ids, file_paths, self.get_note, self.get_note_info)
+        return empty
+
+    def apply_transaction(self, transaction: ChangeTransaction):
+        for original, moved in transaction.file_moves.items():
+            if original != moved:
+                self.index_builder.provider.move_file(original, moved)
+
+            if transaction.by_path[original] is not None:
+                with self.index_builder.provider.write_file(moved) as handle:
+                    handle.write(transaction.by_path[original].to_file_text())
 
     def find_conflicts(self, path: str) -> Dict[str, IndexConflict]:
         """ Detect conflicts between the existing global index and the contents of a new directory """
@@ -228,6 +255,11 @@ class GlobalIndices:
         After the indices are loaded the unique ids will be merged and conflicts detected.
         :param force_checksum: force the use of checksum for the update operation
         """
+        self.by_id.clear()
+        self.all_ids.clear()
+        self.conflicts.clear()
+        self.by_path.clear()
+
         # Update all of the indices
         for name, info in self.index_directory.items():
             index = self.cached.get(name, None)
@@ -244,6 +276,7 @@ class GlobalIndices:
             # from being detected. Instead we'll handle the original conflict after all of the indices have been
             # merged.
             for note in self.indices[name].notes.values():
+                self.by_path[note.file_path] = note
                 if note.id is not None:
                     self.all_ids.add(note.id)
                     if note.id in self.by_id:
